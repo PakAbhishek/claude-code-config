@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 REM ============================================
 REM Claude Code Multi-Machine Setup Script
-REM v3.0.23 - Custom agents auto-sync
+REM v3.0.24 - Custom commands auto-sync
 REM Run this on each new machine to configure Claude Code
 REM ============================================
 
@@ -155,6 +155,49 @@ echo [%DATE% %TIME%] Step 4 complete >> "%LOG_FILE%"
 echo.
 
 REM ============================================
+REM Step 4b: Setting up custom commands with auto-sync
+REM ============================================
+echo Step 4b: Setting up custom commands with auto-sync...
+
+set "SOURCE_COMMANDS=%CONFIG_DIR%\commands"
+set "TARGET_COMMANDS=%USERPROFILE%\.claude\commands"
+
+REM Check if source commands directory exists
+if not exist "%SOURCE_COMMANDS%" (
+    echo [WARN] Source commands directory not found: %SOURCE_COMMANDS%
+    echo [INFO] Skipping commands setup
+    goto :skip_commands
+)
+
+REM Remove existing target if it's a file or broken symlink
+if exist "%TARGET_COMMANDS%" (
+    echo   Removing existing commands directory...
+    rmdir /S /Q "%TARGET_COMMANDS%" 2>nul
+    del "%TARGET_COMMANDS%" 2>nul
+)
+
+REM Try to create symbolic link (requires admin or Developer Mode)
+echo   Creating symbolic link...
+mklink /D "%TARGET_COMMANDS%" "%SOURCE_COMMANDS%" >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
+    echo symbolic link created for %TARGET_COMMANDS% ^<^<^=^=^=^>^> %SOURCE_COMMANDS%
+    echo [OK] Commands linked with real-time auto-sync
+) else (
+    REM Fallback: Copy directory if symlink fails
+    echo   Directory link failed ^(requires admin^), copying instead...
+    xcopy "%SOURCE_COMMANDS%" "%TARGET_COMMANDS%\" /E /I /Y >nul 2>&1
+    if !ERRORLEVEL! EQU 0 (
+        echo [OK] Commands copied ^(manual sync needed for updates^)
+    ) else (
+        echo [WARN] Failed to copy commands directory
+    )
+)
+
+:skip_commands
+echo [%DATE% %TIME%] Step 4b complete >> "%LOG_FILE%"
+echo.
+
+REM ============================================
 REM Step 5: Configure Hindsight MCP server
 REM ============================================
 echo Step 5: Configuring Hindsight MCP server...
@@ -259,6 +302,7 @@ echo Configured:
 echo [OK] .claude directory ready
 echo [OK] CLAUDE.md auto-sync across all machines
 echo [OK] Custom agents auto-sync across all machines
+echo [OK] Custom commands auto-sync across all machines
 echo [OK] Hindsight MCP server
 echo [OK] Hindsight memory capture hook
 echo [OK] AWS SSO credential auto-refresh on session start

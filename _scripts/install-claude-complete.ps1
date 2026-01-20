@@ -1,7 +1,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Windows
-# v3.0.23 - Custom agents auto-sync
+# v3.0.24 - Custom commands auto-sync
 # ============================================
 
 # ============================================

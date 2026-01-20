@@ -379,6 +379,9 @@ And `~/.claude/settings.json` should include:
 
 > **Note:** Older versions (v3.0.1 - v3.0.19) archived in Hindsight. Query with: `recall("installer version history")`
 
+### v3.0.24 (2026-01-20)
+**Custom Commands Auto-Sync** - Added automatic syncing of `~/.claude/commands` directory across machines via OneDrive symlink. Slash commands now work on all machines.
+
 ### v3.0.23 (2026-01-20)
 **Custom Agents Auto-Sync** - Added automatic syncing of `~/.claude/agents` directory across machines via OneDrive symlink.
 
@@ -393,4 +396,4 @@ And `~/.claude/settings.json` should include:
 
 ---
 
-*Last Updated: 2026-01-20 (v3.0.23)*
+*Last Updated: 2026-01-20 (v3.0.24)*
