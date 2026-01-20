@@ -1,9 +1,42 @@
 # Changelog
 
-All notable changes to the Claude Code Team Installer will be documented in this file.
+All notable changes to the Claude Code Configuration System will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.7.0] - 2026-01-20
+
+### Added
+- **Custom Agents Auto-Sync**: Automatic synchronization of `~/.claude/agents` directory across all machines via OneDrive symlink
+- **Custom Commands Auto-Sync**: Slash commands (`~/.claude/commands`) now sync across all machines
+- **Comprehensive Documentation Suite**:
+  - Enhanced README.md for new users with quick start and troubleshooting
+  - SECURITY.md for security auditors (SOC 2 alignment, vulnerability management)
+  - ARCHITECTURE.md for CTOs (system design, integration points, roadmap)
+- **Security Hardening** (commit 5419517):
+  - Secure temporary file handling using `mktemp` to prevent race conditions
+  - Added `-fsSL` flags to all curl operations for fail-fast behavior
+  - Python package isolation via `pipx` with `--break-system-packages` fallback
+- **ARM Architecture Support** (commit dd04187):
+  - Automatic ARM64 detection for AWS CLI downloads on DGX Spark
+  - PEP 668 compliance for Python package installation on Ubuntu 24+
+  - Fixed AWS region configuration (us-east-1 → us-east-2)
+
+### Changed
+- Improved installer error handling and progress feedback
+- Updated all documentation to reflect current architecture
+- Enhanced Quick Start instructions to require git clone for full features
+
+### Fixed
+- Security vulnerabilities in temp file creation (predictable paths)
+- ARM compatibility issues on DGX Spark systems
+- Python package installation on systems with PEP 668 enforcement
+
+### Security
+- Eliminated race condition vulnerabilities in temporary file handling
+- Improved download security with proper curl flags
+- Enhanced Python package isolation to prevent system conflicts
 
 ## [1.6.0] - 2026-01-20
 

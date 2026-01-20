@@ -1,258 +1,305 @@
-# Claude Code Configuration
+# Claude Code Configuration System
 
-Personal Claude Code installer with specialized DGX Spark GPU support.
+<div align="center">
+  <h3>🚀 Enterprise-Grade Claude Code Installer for PakEnergy</h3>
+  <p>
+    <strong>One-click installation • Multi-platform support • Cloud memory • GPU optimization</strong>
+  </p>
+  <p>
+    <a href="#quick-start">Quick Start</a> •
+    <a href="#features">Features</a> •
+    <a href="#platform-support">Platform Support</a> •
+    <a href="#troubleshooting">Troubleshooting</a> •
+    <a href="SECURITY.md">Security</a> •
+    <a href="ARCHITECTURE.md">Architecture</a>
+  </p>
+</div>
 
-## 🚀 Quick Start
+---
 
-### Windows
+## 🎯 Quick Start
 
-```powershell
-# Clone repo (required for agents + slash commands sync)
-git clone https://github.com/PakAbhishek/claude-code-config.git $HOME\claude-code-config
+### Option 1: One-Click Installation (Recommended)
 
-# Double-click to run:
-explorer $HOME\claude-code-config\Install-Claude-Code.bat
+#### Windows
+```batch
+# From OneDrive sync folder
+Double-click: Install-Claude-Code.bat
 ```
 
-### Mac/Linux
-
+#### Mac/Linux
 ```bash
-# Clone repo (required for agents + slash commands sync)
+# Clone and run
 git clone https://github.com/PakAbhishek/claude-code-config.git ~/claude-code-config
 cd ~/claude-code-config/_scripts
 bash install-claude-complete.sh
 ```
 
-### DGX Spark (NVIDIA GB10 Superchip)
-
+#### DGX Spark (NVIDIA GB10 Superchip)
 ```bash
+# GPU-optimized installation
 git clone https://github.com/PakAbhishek/claude-code-config.git ~/claude-code-config
 cd ~/claude-code-config/_scripts
 bash install-claude-dgx-production.sh
 ```
 
-## 📋 What's Included
+**That's it!** The installer handles everything automatically.
 
-### Personal Installer
-- ✅ Claude Code CLI (latest version)
-- ✅ AWS CLI v2 + SSO for Bedrock access
-- ✅ Hindsight MCP server (cloud memory)
-- ✅ CLAUDE.md auto-sync across all machines
-- ✅ Custom agents auto-sync across all machines
-- ✅ Custom slash commands auto-sync across all machines
-- ✅ Session hooks (AWS credential check, protocol reminders)
-- ✅ CLAUDE_MODEL environment variable (Opus 4.5)
+---
 
-### DGX Spark Additions
-- ✅ GB10 Superchip hardware detection
-- ✅ GPU monitoring (nvitop, gpustat)
-- ✅ GPU status on session start
-- ✅ Blackwell architecture optimizations (FP4, Tensor Cores)
-- ✅ Unified memory configuration (128GB)
-- ✅ Development templates (PyTorch, testing scripts)
+## ✨ Features
 
-## 📖 Documentation
+### Core Capabilities
+- **🤖 Claude Code CLI**: Latest version with AWS Bedrock integration
+- **☁️ Cloud Memory**: Hindsight MCP server for persistent memory across machines
+- **🔐 Secure Authentication**: AWS SSO integration with automatic credential refresh
+- **🔄 Auto-Sync**: Configuration, agents, and commands sync across all machines
+- **🛡️ Security Hardening**: SOC 2 compliant with secure temp files and isolated pip
 
-- **[INSTALLER-README.md](INSTALLER-README.md)** - Personal installer guide
-- **[DGX-INSTALLER-README.md](DGX-INSTALLER-README.md)** - DGX Spark complete guide
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history
+### Platform-Specific Features
 
-## 🖥️ Hardware Support
+#### Personal Installation
+- ✅ Works on Windows, Mac, and Linux
+- ✅ Automatic dependency installation (Git, Node.js, AWS CLI)
+- ✅ OneDrive integration for configuration sync
+- ✅ Custom agents and slash commands
+- ✅ Session hooks for AWS credential management
 
-### Personal Installer
-- macOS (Intel and Apple Silicon)
-- Linux (Ubuntu, Debian, Fedora, RHEL, Arch)
-- Windows (via WSL2 or Git Bash)
+#### DGX Spark Edition
+- ✅ NVIDIA Blackwell GPU optimization
+- ✅ Unified memory support (128GB LPDDR5x)
+- ✅ GPU monitoring tools (nvitop, gpustat)
+- ✅ FP4 precision and Tensor Core acceleration
+- ✅ PyTorch/TensorFlow container templates
+- ✅ 1 PFLOP AI performance capability
 
-### DGX Spark Installer
-- **System**: NVIDIA DGX Spark (Grace Blackwell GB10 SOC)
-- **CPU**: 20-core ARM (10x Cortex-X925 + 10x Cortex-A725)
-- **GPU**: NVIDIA Blackwell (5th Gen Tensor Cores, 4th Gen RT Cores)
-- **Memory**: 128 GB LPDDR5x unified (273 GB/s bandwidth)
-- **AI Performance**: 1 PFLOP (1,000 TOPS) at FP4 precision
-- **Model Capacity**: 200B parameters (single system), 405B (dual system)
+---
 
-## 🔧 Installation Details
+## 📋 Requirements
 
-### Prerequisites
-- **Internet connection** (for package downloads)
-- **sudo privileges** (for system packages)
-- **Git** (auto-installed if missing)
+### Minimum Requirements
+- **Internet connection** for package downloads
+- **Admin/sudo privileges** for system package installation
+- **10GB free disk space** for dependencies
+
+### Platform-Specific Requirements
+
+| Platform | Requirements |
+|----------|-------------|
+| **Windows** | Windows 10/11 with Git Bash or WSL2 |
+| **macOS** | macOS 10.15+ (Intel or Apple Silicon) |
+| **Linux** | Ubuntu 20.04+, Debian 10+, RHEL 8+, or Arch |
+| **DGX Spark** | NVIDIA DGX Spark with GB10 Superchip |
+
+---
+
+## 🖥️ Platform Support
+
+### Supported Systems
+
+| System | CPU Architecture | Special Features |
+|--------|-----------------|------------------|
+| Windows PC | x86_64 | OneDrive sync, PowerShell |
+| Mac (Intel) | x86_64 | Homebrew packages |
+| Mac (Apple Silicon) | ARM64 | Native ARM support |
+| Linux Desktop | x86_64 | Native package managers |
+| DGX Spark | ARM64 (Cortex) | GPU optimization, unified memory |
 
 ### Installation Time
-- Personal installer: ~20 minutes
-- DGX Spark installer: ~35 minutes (includes GPU setup)
 
-### What Gets Configured
+- **Personal installer**: ~20 minutes
+- **DGX Spark installer**: ~35 minutes (includes GPU setup)
+- **Team installer**: ~15 minutes (no Hindsight)
 
-#### Personal Setup
+---
+
+## 🔧 What Gets Installed
+
+### Directory Structure
 ```
 ~/.claude/
-├── CLAUDE.md                    # Configuration sync
+├── CLAUDE.md                    # Global configuration
 ├── settings.json                # Claude Code settings
-├── .mcp.json                    # Hindsight MCP config
-├── agents/                      # Custom agents (auto-synced)
+├── .mcp.json                    # MCP server configuration
+├── agents/                      # Custom AI agents
 │   ├── qa-test-engineer.md
 │   ├── devops-guardian.md
 │   └── requirements-guardian.md
-├── commands/                    # Custom slash commands (auto-synced)
-│   └── test.md                  # /test - comprehensive testing
-└── hooks/
-    ├── check-aws-sso.js         # AWS credential check
-    ├── sync-claude-md.js        # Config sync hook
-    ├── protocol-reminder.js     # Startup protocol
-    └── hindsight/
-        └── capture.js           # Memory capture
+├── commands/                    # Slash commands
+│   └── test.md                  # /test command
+├── hooks/                       # Session hooks
+│   ├── check-aws-sso.js         # AWS credential refresh
+│   ├── sync-claude-md.js        # Config sync
+│   └── protocol-reminder.js     # Startup protocols
+└── dgx-profile.json             # (DGX only) Hardware profile
 ```
 
-#### DGX Additions
-```
-~/.claude/
-├── dgx-profile.json             # Hardware specifications
-├── hooks/
-│   └── dgx-gpu-status.js        # GPU status display
-└── dgx-templates/
-    ├── README.md                # Development guide
-    ├── test-unified-memory.py   # GPU functionality test
-    └── pytorch-gpu.dockerfile   # Container template
+### Components Installed
+
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| Claude Code CLI | Latest | Main CLI interface |
+| AWS CLI v2 | 2.x | AWS Bedrock access |
+| Node.js | 18+ | Runtime for Claude Code |
+| Python | 3.9+ | Script execution |
+| pipx | Latest | Secure Python package isolation |
+| Git | 2.x+ | Repository management |
+
+---
+
+## 🚀 Post-Installation
+
+### Verification Commands
+
+```bash
+# Check Claude Code installation
+claude --version
+
+# Test cloud memory connection
+# In Claude Code, type:
+recall("test connection")
+
+# Verify AWS credentials
+aws sts get-caller-identity
+
+# (DGX Spark only) Check GPU
+nvidia-smi
 ```
 
-## 🔄 Updating Configuration
+### First-Time Setup
 
-Pull latest changes:
+1. **AWS SSO Login**: The installer opens your browser for PakEnergy SSO authentication
+2. **Profile Selection**: Choose your AWS profile (usually "default" or "pakenergy")
+3. **Verification**: The installer confirms AWS access before completing
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### AWS SSO Not Working
+```bash
+# Manual SSO login
+aws sso login
+
+# Check profile
+aws configure list
+```
+
+#### Hindsight Not Connecting
+```bash
+# List MCP servers
+claude mcp list
+
+# Should show: hindsight
+# If not, check ~/.claude/.mcp.json
+```
+
+#### DGX GPU Not Detected
+```bash
+# Check NVIDIA driver
+nvidia-smi
+
+# Reinstall PyTorch for ARM
+pip3 install --force-reinstall torch --index-url https://download.pytorch.org/whl/cu121
+```
+
+#### Installation Fails
+```bash
+# Check logs
+cat ~/.claude-install.log
+
+# Run with verbose mode
+bash -x install-claude-complete.sh
+```
+
+### Getting Help
+
+1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions
+2. Review installation logs in `~/.claude-install.log`
+3. Contact IT support with error details
+
+---
+
+## 🔄 Updating
+
+### Pull Latest Changes
 ```bash
 cd ~/claude-code-config
 git pull
 ```
 
-Re-run installer to apply updates:
+### Re-run Installer
 ```bash
-cd ~/claude-code-config/_scripts
-bash install-claude-complete.sh       # Personal (Mac/Linux)
-# or
-bash install-claude-dgx-production.sh # DGX Spark
+# Personal
+bash _scripts/install-claude-complete.sh
+
+# DGX Spark
+bash _scripts/install-claude-dgx-production.sh
 ```
 
-## 🧪 Verification
+Updates preserve your configuration while upgrading components.
 
-### Personal Installer
-```bash
-# Check Claude Code
-claude --version
+---
 
-# Test Hindsight MCP
-recall("test connection")
+## 📖 Documentation
 
-# Verify AWS credentials
-aws sts get-caller-identity
-```
+| Document | Audience | Description |
+|----------|----------|-------------|
+| [README.md](README.md) | New Users | This file - quick start and overview |
+| [SECURITY.md](SECURITY.md) | Security Auditors | Security architecture and compliance |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | CTOs/Architects | System design and integration |
+| [INSTALLER-README.md](INSTALLER-README.md) | Developers | Detailed installer documentation |
+| [DGX-INSTALLER-README.md](DGX-INSTALLER-README.md) | DGX Users | GPU-specific documentation |
+| [CHANGELOG.md](CHANGELOG.md) | All | Version history and changes |
 
-### DGX Spark
-```bash
-# Run verification script
-bash ~/claude-code-config/_scripts/verify-dgx-install.sh
-
-# Test GPU
-python ~/.claude/dgx-templates/test-unified-memory.py
-
-# Monitor GPU
-gpustat -i 1
-```
-
-## 📊 GPU Monitoring (DGX Spark)
-
-When Claude Code starts, you'll see:
-```
-═══════════════════════════════════════════
-  DGX Spark - GB10 Superchip Status
-═══════════════════════════════════════════
-System: NVIDIA Blackwell
-Unified Memory: 12.5 / 128.0 GB (9.8%)
-GPU Utilization: 15%
-Temperature: 42°C
-Power Draw: 45W / 140W TDP
-═══════════════════════════════════════════
-```
-
-Available commands:
-- `nvitop` - Interactive dashboard
-- `gpustat -i 1` - Live stats (1s refresh)
-- `nvidia-smi` - Standard NVIDIA tool
-
-## 🐛 Troubleshooting
-
-### Personal Installer Issues
-
-**AWS SSO not working:**
-```bash
-aws sso login
-```
-
-**Hindsight not connecting:**
-```bash
-claude mcp list
-# Should show: hindsight
-```
-
-### DGX Spark Issues
-
-**GPU not detected:**
-```bash
-nvidia-smi
-# Should show Blackwell GPU with ~128GB memory
-```
-
-**Unified memory test fails:**
-```bash
-# Reinstall PyTorch for ARM + CUDA
-pip3 install --force-reinstall torch --index-url https://download.pytorch.org/whl/cu121
-```
-
-## 📚 Additional Resources
-
-- [Claude Code Documentation](https://docs.anthropic.com/claude/docs/claude-code)
-- [NVIDIA DGX Documentation](https://docs.nvidia.com/dgx/)
-- [Hindsight MCP Server](http://hindsight-achau.southcentralus.azurecontainer.io:8888)
+---
 
 ## 🔐 Security
 
-- ✅ SOC2 compliant (no hardcoded secrets)
-- ✅ AWS SSO integration (no static credentials)
-- ✅ Environment variable-based configuration
-- ✅ Private repository
+This system is designed with security-first principles:
+
+- ✅ **SOC 2 Compliant**: No hardcoded secrets or credentials
+- ✅ **AWS SSO Integration**: Temporary credentials with automatic refresh
+- ✅ **Secure Temp Files**: Using mktemp for unpredictable paths
+- ✅ **Package Isolation**: pipx for Python package security
+- ✅ **Environment Variables**: All sensitive data in environment
+
+See [SECURITY.md](SECURITY.md) for complete security documentation.
+
+---
+
+## 🏗️ Architecture
+
+Built on modern, scalable architecture:
+
+- **Modular Design**: Separate installers for different use cases
+- **Cloud-Native**: Hindsight MCP server in Azure Container Instances
+- **Cross-Platform**: Unified experience across Windows, Mac, Linux
+- **GPU-Optimized**: Special support for NVIDIA DGX systems
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for system design details.
+
+---
 
 ## 📝 License
 
-Personal configuration - Internal use only.
+Internal use only - PakEnergy proprietary configuration.
+
+---
+
+## 👥 Credits
 
 **Author**: Abhishek Chauhan (achau)
 **Organization**: PakEnergy
 **Last Updated**: 2026-01-20
+**Version**: 1.7.0
 
 ---
 
-## Version History
-
-### v1.7.0 (2026-01-20) - Custom Agents & Commands Sync
-- Added automatic syncing of custom agents across all machines
-- Added automatic syncing of slash commands across all machines
-- `/test` command for comprehensive testing (unit, integration, system, UAT)
-- Installer auto-detects OneDrive vs git-cloned config
-
-### v1.6.0 (2026-01-20) - DGX Spark Support
-- Added DGX Spark installer for GB10 Superchip
-- GPU monitoring hooks and development templates
-- Blackwell architecture optimizations
-- 8 new files, 2300+ lines of code
-
-### v1.5.0 (2026-01-20) - AWS Profile Fix
-- Dynamic profile detection
-- Fixed AWS_PROFILE environment variable
-- Active verification polling
-
-### v1.4.0 (2026-01-19) - Pipe-Safe Installation
-- curl | bash support
-- Embedded configurations
-- Auto-detection of interactive mode
-
-See [CHANGELOG.md](CHANGELOG.md) for complete history.
+<div align="center">
+  <p>
+    <strong>Need help?</strong> Check the <a href="TROUBLESHOOTING.md">troubleshooting guide</a> or contact IT support.
+  </p>
+</div>
