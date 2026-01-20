@@ -327,10 +327,11 @@ else
         echo -e "${YELLOW}Installing AWS CLI v2...${NC}"
 
         if [ "$IS_MAC" = true ]; then
-            # Mac installation
-            curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-            sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
-            rm /tmp/AWSCLIV2.pkg
+            # Mac installation - use secure temp file
+            AWS_TMP_PKG=$(mktemp /tmp/awscli.XXXXXXXXXX.pkg)
+            curl -fsSL "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "$AWS_TMP_PKG"
+            sudo installer -pkg "$AWS_TMP_PKG" -target /
+            rm -f "$AWS_TMP_PKG"
         else
             # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
             ARCH=$(uname -m)
@@ -340,12 +341,12 @@ else
             else
                 AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
             fi
-            curl "$AWS_CLI_URL" -o "/tmp/awscliv2.zip"
-            cd /tmp
-            unzip -q awscliv2.zip
-            sudo ./aws/install
-            rm -rf /tmp/aws /tmp/awscliv2.zip
-            cd -
+            # Use secure temp directory to prevent race conditions
+            AWS_TMP_DIR=$(mktemp -d /tmp/awscli.XXXXXXXXXX)
+            curl -fsSL "$AWS_CLI_URL" -o "$AWS_TMP_DIR/awscliv2.zip"
+            unzip -q "$AWS_TMP_DIR/awscliv2.zip" -d "$AWS_TMP_DIR"
+            sudo "$AWS_TMP_DIR/aws/install"
+            rm -rf "$AWS_TMP_DIR"
         fi
 
         if command -v aws &> /dev/null; then

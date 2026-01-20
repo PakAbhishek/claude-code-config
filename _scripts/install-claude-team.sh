@@ -297,10 +297,12 @@ if ! command -v aws &> /dev/null; then
     echo -e "${YELLOW}AWS CLI not found. Installing...${NC}"
     if [ "$IS_MAC" = true ]; then
         echo "Downloading AWS CLI v2 for Mac..."
-        curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+        # Use secure temp file to prevent race conditions
+        AWS_TMP_PKG=$(mktemp /tmp/awscli.XXXXXXXXXX.pkg)
+        curl -fsSL "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "$AWS_TMP_PKG"
         echo "Installing AWS CLI (requires sudo)..."
-        sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
-        rm /tmp/AWSCLIV2.pkg
+        sudo installer -pkg "$AWS_TMP_PKG" -target /
+        rm -f "$AWS_TMP_PKG"
         echo -e "${GREEN}✓ AWS CLI v2 installed${NC}"
     else
         # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
@@ -312,11 +314,13 @@ if ! command -v aws &> /dev/null; then
             echo "Downloading AWS CLI v2 for Linux (x86_64)..."
             AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
         fi
-        curl "$AWS_CLI_URL" -o "/tmp/awscliv2.zip"
-        unzip -q /tmp/awscliv2.zip -d /tmp
+        # Use secure temp directory to prevent race conditions
+        AWS_TMP_DIR=$(mktemp -d /tmp/awscli.XXXXXXXXXX)
+        curl -fsSL "$AWS_CLI_URL" -o "$AWS_TMP_DIR/awscliv2.zip"
+        unzip -q "$AWS_TMP_DIR/awscliv2.zip" -d "$AWS_TMP_DIR"
         echo "Installing AWS CLI (requires sudo)..."
-        sudo /tmp/aws/install
-        rm -rf /tmp/awscliv2.zip /tmp/aws
+        sudo "$AWS_TMP_DIR/aws/install"
+        rm -rf "$AWS_TMP_DIR"
         echo -e "${GREEN}✓ AWS CLI v2 installed${NC}"
     fi
 else

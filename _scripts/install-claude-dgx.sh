@@ -271,8 +271,17 @@ EOF
     # Install GPU monitoring tools
     echo ""
     echo "Installing GPU monitoring tools..."
-    # Use --break-system-packages for PEP 668 compliance on Ubuntu 24+ (DGX OS)
-    pip3 install --user --break-system-packages nvitop gpustat 2>&1 | grep -v "Requirement already satisfied" || true
+
+    # Prefer pipx for isolated installation (more secure), fallback to pip --user
+    if command -v pipx &> /dev/null; then
+        echo "Using pipx for secure isolated installation..."
+        pipx install nvitop 2>&1 | grep -v "already" || true
+        pipx install gpustat 2>&1 | grep -v "already" || true
+    else
+        # Fallback: Use pip with --user and --break-system-packages for PEP 668 (Ubuntu 24+)
+        echo "pipx not found, using pip3 --user..."
+        pip3 install --user --break-system-packages nvitop gpustat 2>&1 | grep -v "Requirement already satisfied" || true
+    fi
 
     # Add to PATH if not already there
     if [ -d "$HOME/.local/bin" ]; then
@@ -285,7 +294,7 @@ EOF
         echo -e "${GREEN}✓ GPU monitoring tools installed (nvitop, gpustat)${NC}"
     else
         echo -e "${YELLOW}⚠ GPU monitoring tools may not have installed correctly${NC}"
-        echo "  You can manually install later with: pip3 install --user nvitop gpustat"
+        echo "  You can manually install later with: pipx install nvitop gpustat"
     fi
 
     echo ""
