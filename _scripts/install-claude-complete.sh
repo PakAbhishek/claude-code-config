@@ -332,8 +332,15 @@ else
             sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
             rm /tmp/AWSCLIV2.pkg
         else
-            # Linux installation
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+            # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+                echo -e "${YELLOW}Detected ARM architecture ($ARCH) - using ARM64 AWS CLI binary${NC}"
+                AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
+            else
+                AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+            fi
+            curl "$AWS_CLI_URL" -o "/tmp/awscliv2.zip"
             cd /tmp
             unzip -q awscliv2.zip
             sudo ./aws/install

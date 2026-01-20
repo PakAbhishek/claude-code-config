@@ -303,8 +303,16 @@ if ! command -v aws &> /dev/null; then
         rm /tmp/AWSCLIV2.pkg
         echo -e "${GREEN}✓ AWS CLI v2 installed${NC}"
     else
-        echo "Downloading AWS CLI v2 for Linux..."
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+        # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
+        ARCH=$(uname -m)
+        if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+            echo "Downloading AWS CLI v2 for Linux (ARM64)..."
+            AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
+        else
+            echo "Downloading AWS CLI v2 for Linux (x86_64)..."
+            AWS_CLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        fi
+        curl "$AWS_CLI_URL" -o "/tmp/awscliv2.zip"
         unzip -q /tmp/awscliv2.zip -d /tmp
         echo "Installing AWS CLI (requires sudo)..."
         sudo /tmp/aws/install

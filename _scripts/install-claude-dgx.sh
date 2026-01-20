@@ -271,7 +271,8 @@ EOF
     # Install GPU monitoring tools
     echo ""
     echo "Installing GPU monitoring tools..."
-    pip3 install --user nvitop gpustat 2>&1 | grep -v "Requirement already satisfied" || true
+    # Use --break-system-packages for PEP 668 compliance on Ubuntu 24+ (DGX OS)
+    pip3 install --user --break-system-packages nvitop gpustat 2>&1 | grep -v "Requirement already satisfied" || true
 
     # Add to PATH if not already there
     if [ -d "$HOME/.local/bin" ]; then
