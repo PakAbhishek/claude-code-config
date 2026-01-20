@@ -4,23 +4,25 @@ Personal Claude Code installer with specialized DGX Spark GPU support.
 
 ## 🚀 Quick Start
 
-### Personal Installer (Mac/Linux/Windows)
+### Personal Installer (Mac/Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/PakAbhishek/claude-code-config/main/_scripts/install-claude-complete.sh | bash
+# Clone repo (required for agents + slash commands sync)
+git clone https://github.com/PakAbhishek/claude-code-config.git ~/claude-code-config
+cd ~/claude-code-config/_scripts
+bash install-claude-complete.sh
 ```
+
+### Windows Personal Installer
+
+Double-click: `Install-Claude-Code.bat` from OneDrive sync folder
 
 ### DGX Spark Installer (NVIDIA GB10 Superchip)
 
 ```bash
 git clone https://github.com/PakAbhishek/claude-code-config.git ~/claude-code-config
 cd ~/claude-code-config/_scripts
-bash install-claude-dgx.sh
-```
-
-Or one-liner:
-```bash
-curl -fsSL https://raw.githubusercontent.com/PakAbhishek/claude-code-config/main/_scripts/install-claude-dgx-git.sh | bash
+bash install-claude-dgx-production.sh
 ```
 
 ## 📋 What's Included
@@ -120,9 +122,9 @@ git pull
 Re-run installer to apply updates:
 ```bash
 cd ~/claude-code-config/_scripts
-bash install-claude-complete.sh  # Personal
+bash install-claude-complete.sh       # Personal (Mac/Linux)
 # or
-bash install-claude-dgx.sh       # DGX Spark
+bash install-claude-dgx-production.sh # DGX Spark
 ```
 
 ## 🧪 Verification
