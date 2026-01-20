@@ -5,6 +5,78 @@ All notable changes to the Claude Code Team Installer will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-20
+
+### 🚀 DGX Spark Installer - GPU-Optimized Claude Code
+
+#### Added
+- **DGX Spark Installer**: Specialized installer for NVIDIA DGX Spark (GB10 Superchip)
+  - `_scripts/install-claude-dgx.sh` - Main installer (extends personal installer v3.0.23)
+  - `_scripts/dgx-gpu-status.js` - SessionStart hook showing GPU stats
+  - `_scripts/add-dgx-hook.py` - Hook registration script
+  - `_scripts/verify-dgx-install.sh` - Comprehensive verification script
+  - `DGX-INSTALLER-README.md` - Complete user documentation (27 sections)
+- **DGX Templates**: Development templates in `_scripts/dgx-templates/`
+  - `README.md` - Complete guide with Blackwell optimizations
+  - `test-unified-memory.py` - GPU functionality verification
+  - `pytorch-gpu.dockerfile` - Container for GPU development
+- **Hardware Detection**: Automatic DGX Spark GB10 Superchip identification
+  - CPU: 20-core ARM (Cortex-X925 + Cortex-A725)
+  - GPU: NVIDIA Blackwell (5th Gen Tensor Cores)
+  - Memory: 128 GB LPDDR5x unified (273 GB/s)
+  - AI Performance: 1 PFLOP (1,000 TOPS) at FP4
+- **GPU Environment Configuration**:
+  - CUDA paths and libraries
+  - Unified memory environment variables
+  - Blackwell-specific optimizations (FP4, Tensor Cores)
+  - DGX system identification
+- **GPU Monitoring**: Automatic tools installation
+  - `nvitop` - Interactive GPU dashboard
+  - `gpustat` - Lightweight CLI stats
+- **Hardware Profile**: JSON profile at `~/.claude/dgx-profile.json`
+  - Complete GB10 Superchip specifications
+  - Pre-installed software inventory (CUDA, cuDNN, TensorRT, RAPIDS, NIM)
+  - Model capacity tracking (200B single, 405B dual-system)
+
+#### Changed
+- **Installer Architecture**: DGX installer extends personal installer
+  - Downloads and runs `install-claude-complete.sh` first
+  - Adds GPU-specific layer on top
+  - Inherits: Hindsight MCP, AWS SSO, hooks, CLAUDE.md sync
+- **SessionStart Hook**: Enhanced with GPU status display
+  - Shows unified memory usage (X / 128 GB)
+  - GPU utilization percentage
+  - Temperature and power draw
+  - Warnings for high temp (>75°C), near TDP limit (>130W), memory >90%
+
+#### Features
+- **Native Install + Container Support**:
+  - Claude Code: Native installation (Node.js CLI)
+  - GPU workloads: Container templates for PyTorch/TensorFlow
+- **OneDrive Sync for Linux**: Three methods documented
+  - SMB mount (recommended)
+  - rclone
+  - Manual SCP
+- **Graceful Degradation**: GPU detection optional, continues without it
+- **Multi-System Clustering**: 405B parameter model support (2x DGX Spark)
+
+**Hardware Target**: NVIDIA DGX Spark with Grace Blackwell GB10 SOC
+**Extends**: Personal installer v3.0.23
+**Installation Time**: ~35 minutes (includes AWS SSO login)
+**Verification**: 10 checks (personal + DGX components)
+
+**Files Added**:
+- `_scripts/install-claude-dgx.sh` (v1.0.0, 633 lines)
+- `_scripts/dgx-gpu-status.js` (GPU status hook)
+- `_scripts/add-dgx-hook.py` (Hook registration)
+- `_scripts/verify-dgx-install.sh` (Post-install verification)
+- `_scripts/dgx-templates/README.md` (Complete guide)
+- `_scripts/dgx-templates/test-unified-memory.py` (GPU test)
+- `_scripts/dgx-templates/pytorch-gpu.dockerfile` (Container)
+- `DGX-INSTALLER-README.md` (User documentation, 600+ lines)
+
+---
+
 ## [1.5.0] - 2026-01-20
 
 ### 🎯 One-Shot Fix - Dynamic Profile Detection and AWS_PROFILE Fix

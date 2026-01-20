@@ -1,36 +1,19 @@
-# OS Files
+# Machine-specific
 .DS_Store
 Thumbs.db
-desktop.ini
+.git/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Credentials (double-check these don't exist)
+*.pem
+*.key
+*.env
+*credentials*
+*.secrets
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
+# Backup files
 *.bak
-.bak
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Node modules (if any)
-node_modules/
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
+*.tmp
 
 # Personal test files
 test-*.sh
-test-*.ps1
+debug-*.log
