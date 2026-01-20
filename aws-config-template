@@ -1,0 +1,7 @@
+[default]
+sso_start_url = https://d-9a6774682a.awsapps.com/start
+sso_region = us-east-2
+sso_account_id = 557690600386
+sso_role_name = AISandbox
+region = us-east-2
+output = json

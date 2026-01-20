@@ -1,0 +1,16 @@
+{
+  "provider": "bedrock",
+  "awsAuthRefresh": "aws sso login",
+  "env": {
+    "CLAUDE_CODE_USE_BEDROCK": "1",
+    "AWS_REGION": "us-east-1"
+  },
+  "permissions": {
+    "deny": [
+      "mcp__ado__wit_create_work_item",
+      "mcp__ado__wit_update_work_item",
+      "mcp__ado__wit_update_work_items_batch",
+      "mcp__ado__wit_add_work_item_comment"
+    ]
+  }
+}
