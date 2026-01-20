@@ -29,7 +29,9 @@ curl -fsSL https://raw.githubusercontent.com/PakAbhishek/claude-code-config/main
 - ✅ Claude Code CLI (latest version)
 - ✅ AWS CLI v2 + SSO for Bedrock access
 - ✅ Hindsight MCP server (cloud memory)
-- ✅ CLAUDE.md auto-sync
+- ✅ CLAUDE.md auto-sync across all machines
+- ✅ Custom agents auto-sync across all machines
+- ✅ Custom slash commands auto-sync across all machines
 - ✅ Session hooks (AWS credential check, protocol reminders)
 - ✅ CLAUDE_MODEL environment variable (Opus 4.5)
 
@@ -81,6 +83,12 @@ curl -fsSL https://raw.githubusercontent.com/PakAbhishek/claude-code-config/main
 ├── CLAUDE.md                    # Configuration sync
 ├── settings.json                # Claude Code settings
 ├── .mcp.json                    # Hindsight MCP config
+├── agents/                      # Custom agents (auto-synced)
+│   ├── qa-test-engineer.md
+│   ├── devops-guardian.md
+│   └── requirements-guardian.md
+├── commands/                    # Custom slash commands (auto-synced)
+│   └── test.md                  # /test - comprehensive testing
 └── hooks/
     ├── check-aws-sso.js         # AWS credential check
     ├── sync-claude-md.js        # Config sync hook
@@ -216,6 +224,12 @@ Personal configuration - Internal use only.
 ---
 
 ## Version History
+
+### v1.7.0 (2026-01-20) - Custom Agents & Commands Sync
+- Added automatic syncing of custom agents across all machines
+- Added automatic syncing of slash commands across all machines
+- `/test` command for comprehensive testing (unit, integration, system, UAT)
+- Installer auto-detects OneDrive vs git-cloned config
 
 ### v1.6.0 (2026-01-20) - DGX Spark Support
 - Added DGX Spark installer for GB10 Superchip
