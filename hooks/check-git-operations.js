@@ -14,6 +14,8 @@
  */
 
 const enforcementState = require('./enforcement-state.js');
+const fs = require('fs');
+const DEBUG_FILE = require('path').join(process.env.USERPROFILE || process.env.HOME, '.claude', 'hooks-state', 'git-ops-debug.json');
 
 // All git operations that require review
 const GIT_OPERATIONS = {
@@ -105,15 +107,12 @@ function analyzeGitCommand(command) {
         return { isGit: false };
     }
 
-    // Check if it's a safe operation first
-    if (SAFE_GIT_PATTERNS.some(p => p.test(command))) {
-        return { isGit: true, safe: true };
-    }
-
     // Check if it's destructive (always warn)
     const isDestructive = DESTRUCTIVE_GIT_PATTERNS.some(p => p.test(command));
 
-    // Check which operation it is
+    // IMPORTANT: Check for DANGEROUS operations FIRST before safe ones
+    // A command like "git status && git commit" contains BOTH safe and dangerous ops
+    // We must block if ANY dangerous operation is present
     for (const [opName, opConfig] of Object.entries(GIT_OPERATIONS)) {
         if (opConfig.patterns.some(p => p.test(command))) {
             return {
@@ -125,6 +124,11 @@ function analyzeGitCommand(command) {
                 destructive: isDestructive
             };
         }
+    }
+
+    // Only AFTER checking for dangerous ops, check if it's a safe-only operation
+    if (SAFE_GIT_PATTERNS.some(p => p.test(command))) {
+        return { isGit: true, safe: true };
     }
 
     // Unknown git command - be conservative, allow but warn
@@ -158,6 +162,19 @@ async function main() {
 
         // Claude Code sends tool_input nested inside the hook input
         const command = toolInput.tool_input?.command || toolInput.command || '';
+
+        // DEBUG: Log what we receive
+        try {
+            const state = enforcementState.loadState();
+            fs.writeFileSync(DEBUG_FILE, JSON.stringify({
+                timestamp: new Date().toISOString(),
+                command: command,
+                tool_input: toolInput.tool_input,
+                needsDevopsReview: state.needsDevopsReview,
+                needsTesting: state.needsTesting,
+                editsSinceDevopsReview: state.editsSinceDevopsReview
+            }, null, 2));
+        } catch (e) {}
 
         // Analyze the command
         const analysis = analyzeGitCommand(command);
