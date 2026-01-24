@@ -7,7 +7,7 @@ REM Run this on each new machine to configure Claude Code
 REM ============================================
 
 REM Set paths
-set "CONFIG_DIR=%USERPROFILE%\OneDrive - PakEnergy\Claude Backup\claude-config"
+set "CONFIG_DIR=%USERPROFILE%\OneDrive\Claude Backup\claude-config"
 set "SCRIPTS_DIR=%CONFIG_DIR%\_scripts"
 set "LOG_FILE=%TEMP%\claude-setup.log"
 

@@ -1,27 +1,29 @@
 {
-  "provider": "bedrock",
-  "model": "us.anthropic.claude-opus-4-5-20251101-v1:0",
   "env": {
     "CLAUDE_CODE_USE_BEDROCK": "1",
     "AWS_REGION": "us-east-1"
   },
-  "mcpServers": {
-    "hindsight": {
-      "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
-    }
+  "permissions": {
+    "deny": [
+      "mcp__ado__wit_create_work_item",
+      "mcp__ado__wit_update_work_item",
+      "mcp__ado__wit_update_work_items_batch",
+      "mcp__ado__wit_add_work_item_comment"
+    ]
   },
+  "model": "us.anthropic.claude-opus-4-5-20251101-v1:0",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/sync-claude-md.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/sync-claude-md.js\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/check-aws-sso.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-aws-sso.js\"",
             "timeout": 120
           }
         ]
@@ -30,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/protocol-reminder.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/protocol-reminder.js\"",
             "timeout": 5
           }
         ]
@@ -42,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/check-edit-token.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-edit-token.js\"",
             "timeout": 5
           }
         ]
@@ -52,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/check-edit-token.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-edit-token.js\"",
             "timeout": 5
           }
         ]
@@ -62,7 +64,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/check-commit-gate.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-testing-shortcut.js\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-git-operations.js\"",
             "timeout": 5
           }
         ]
@@ -74,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/grant-edit-token.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/clear-review-flags.js\"",
             "timeout": 10
           }
         ]
@@ -84,7 +91,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/track-edit.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/track-file-types.js\"",
             "timeout": 5
           }
         ]
@@ -94,19 +101,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/track-edit.js\"",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/track-file-types.js\"",
             "timeout": 5
           }
         ]
       }
     ]
   },
-  "permissions": {
-    "deny": [
-      "mcp__ado__wit_create_work_item",
-      "mcp__ado__wit_update_work_item",
-      "mcp__ado__wit_update_work_items_batch",
-      "mcp__ado__wit_add_work_item_comment"
-    ]
+  "provider": "bedrock",
+  "mcpServers": {
+    "hindsight": {
+      "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+    }
   }
 }

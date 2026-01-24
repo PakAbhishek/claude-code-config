@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # Claude Code Multi-Machine Setup Script
-# v3.0.24 - Custom agents and commands auto-sync
+# v3.0.26 - Settings.json auto-sync with NEW hook format
 # Run this on each new Mac/Linux machine to configure Claude Code
 # ============================================
 
@@ -11,7 +11,7 @@ echo "===================================="
 echo
 
 # Check for config directory (OneDrive or git-cloned)
-ONEDRIVE_CONFIG="$HOME/OneDrive - PakEnergy/Claude Backup/claude-config"
+ONEDRIVE_CONFIG="$HOME/OneDrive/Claude Backup/claude-config"
 GIT_CONFIG="$HOME/claude-code-config"
 
 if [ -d "$ONEDRIVE_CONFIG" ]; then
@@ -186,19 +186,40 @@ fi
 echo
 
 # ============================================
-# Step 4: Register hooks in settings.json
+# Step 4: Configure settings.json with auto-sync
 # ============================================
-echo "Step 4: Registering hooks in settings.json..."
+echo "Step 4: Configuring settings.json with auto-sync..."
 
-if [ -f "$SCRIPTS_DIR/add-sessionstart-hook.py" ]; then
-    python3 "$SCRIPTS_DIR/add-sessionstart-hook.py"
+SETTINGS_TEMPLATE="$CONFIG_DIR/settings.json"
+SETTINGS_FILE="$HOME/.claude/settings.json"
+HOOKS_DIR="$HOME/.claude/hooks"
+
+if [ -f "$SETTINGS_TEMPLATE" ]; then
+    echo "  Settings template found in OneDrive"
+
+    # Read template and replace {{HOOKS_DIR}} placeholder
+    sed "s|{{HOOKS_DIR}}|$HOOKS_DIR|g" "$SETTINGS_TEMPLATE" > "$SETTINGS_FILE"
+
     if [ $? -eq 0 ]; then
-        echo "✓ SessionStart hooks registered"
+        echo "✓ Settings.json configured with NEW hook format"
     else
-        echo "WARNING: Failed to register SessionStart hooks"
+        echo "WARNING: Failed to configure settings.json"
     fi
 else
-    echo "WARNING: add-sessionstart-hook.py not found"
+    echo "WARNING: Settings template not found at: $SETTINGS_TEMPLATE"
+    echo "  Will use manual hook registration method instead"
+
+    # Fallback to old method if template doesn't exist
+    if [ -f "$SCRIPTS_DIR/add-sessionstart-hook.py" ]; then
+        python3 "$SCRIPTS_DIR/add-sessionstart-hook.py"
+        if [ $? -eq 0 ]; then
+            echo "✓ SessionStart hooks registered (fallback method)"
+        else
+            echo "WARNING: Failed to register SessionStart hooks"
+        fi
+    else
+        echo "WARNING: add-sessionstart-hook.py not found"
+    fi
 fi
 echo
 
@@ -214,6 +235,8 @@ echo "  ✓ .claude directory ready"
 echo "  ✓ CLAUDE.md auto-sync across all machines"
 echo "  ✓ Custom agents auto-sync across all machines"
 echo "  ✓ Custom commands (slash commands) auto-sync across all machines"
+echo "  ✓ Settings.json with NEW hook format (auto-synced)"
+echo "  ✓ SDLC enforcement hooks configured"
 echo "  ✓ Hindsight MCP server"
 echo "  ✓ Hindsight memory capture hook"
 echo "  ✓ AWS SSO credential auto-refresh on session start"

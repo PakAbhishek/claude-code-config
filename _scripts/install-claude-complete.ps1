@@ -1,7 +1,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Windows
-# v3.0.24 - Custom commands auto-sync
+# v3.0.26 - Settings.json auto-sync with NEW hook format
 # ============================================
 
 # ============================================
@@ -366,7 +366,7 @@ Write-Log "============================================" "STEP"
 Write-Log "Step 4: Configuring Hindsight & Auto-Sync" "STEP"
 Write-Log "============================================" "STEP"
 
-$configDir = "$env:USERPROFILE\OneDrive - PakEnergy\Claude Backup\claude-config"
+$configDir = "$env:USERPROFILE\OneDrive\Claude Backup\claude-config"
 $scriptsDir = "$configDir\_scripts"
 $setupScript = "$scriptsDir\setup-new-machine.bat"
 
@@ -782,6 +782,228 @@ $env:CLAUDE_MODEL = $bedrockModel
 Write-Log "CLAUDE_MODEL set to: $bedrockModel" "OK"
 
 # ============================================
+# Step 6: SDLC Enforcement Hooks & Settings Sync
+# ============================================
+Write-Host ""
+Write-Log "============================================" "STEP"
+Write-Log "Step 6: Configuring SDLC Enforcement Hooks & Settings Sync" "STEP"
+Write-Log "============================================" "STEP"
+
+$claudeDir = "$env:USERPROFILE\.claude"
+$localHooksDir = "$claudeDir\hooks"
+$oneDriveHooksDir = "$configDir\hooks"
+$settingsFile = "$claudeDir\settings.json"
+$oneDriveSettingsTemplate = "$configDir\settings.json"
+
+Write-Log "Claude dir: $claudeDir"
+Write-Log "Local hooks dir: $localHooksDir"
+Write-Log "OneDrive hooks dir: $oneDriveHooksDir"
+Write-Log "Settings file: $settingsFile"
+Write-Log "Settings template: $oneDriveSettingsTemplate"
+
+# Ensure .claude directory exists
+if (-not (Test-Path $claudeDir)) {
+    Write-Log "Creating .claude directory..."
+    New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
+}
+
+# ============================================
+# 6a. Symlink hooks directory
+# ============================================
+if (Test-Path $oneDriveHooksDir) {
+    Write-Log "OneDrive hooks folder found" "OK"
+
+    # Remove existing hooks directory if it exists (could be regular folder or symlink)
+    if (Test-Path $localHooksDir) {
+        $existingItem = Get-Item $localHooksDir -Force
+        if ($existingItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            Write-Log "Removing existing hooks symlink..."
+            Remove-Item $localHooksDir -Force
+        } else {
+            Write-Log "Removing existing hooks directory..."
+            Remove-Item $localHooksDir -Recurse -Force
+        }
+    }
+
+    # Create symlink to OneDrive hooks folder
+    Write-Log "Creating hooks symlink..."
+    try {
+        New-Item -ItemType SymbolicLink -Path $localHooksDir -Target $oneDriveHooksDir -Force | Out-Null
+        Write-Log "Hooks symlink created successfully" "OK"
+
+        # Verify symlink
+        $hookFiles = Get-ChildItem -Path $localHooksDir -Filter "*.js" -ErrorAction SilentlyContinue
+        Write-Log "Found $($hookFiles.Count) hook files in symlinked directory"
+    } catch {
+        Write-Log "Failed to create hooks symlink: $_" "WARN"
+        Write-Log "Falling back to copy method..."
+
+        # Copy hooks as fallback
+        New-Item -ItemType Directory -Path $localHooksDir -Force | Out-Null
+        Copy-Item -Path "$oneDriveHooksDir\*" -Destination $localHooksDir -Recurse -Force
+        Write-Log "Hooks copied to local directory" "OK"
+    }
+} else {
+    Write-Log "OneDrive hooks folder not found at: $oneDriveHooksDir" "WARN"
+    Show-MessageBox -Message "SDLC enforcement hooks not found in OneDrive.`n`nThe hooks folder should be at:`n$oneDriveHooksDir`n`nYou can set this up manually later." -Icon Warning
+}
+
+# ============================================
+# 6b. Configure settings.json with auto-sync
+# ============================================
+Write-Log "Configuring settings.json with auto-sync..."
+
+if (-not (Test-Path $oneDriveSettingsTemplate)) {
+    Write-Log "OneDrive settings template not found, creating from defaults..." "WARN"
+    # If template doesn't exist, create basic one
+    $defaultSettings = @{
+        "env" = @{
+            "CLAUDE_CODE_USE_BEDROCK" = "1"
+            "AWS_REGION" = "us-east-1"
+        }
+        "provider" = "bedrock"
+        "model" = "us.anthropic.claude-opus-4-5-20251101-v1:0"
+        "mcpServers" = @{
+            "hindsight" = @{
+                "url" = "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+            }
+        }
+        "hooks" = @{
+            "SessionStart" = @(
+                @{
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/sync-claude-md.js`""
+                            "timeout" = 10
+                        },
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/check-aws-sso.js`""
+                            "timeout" = 120
+                        }
+                    )
+                },
+                @{
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/protocol-reminder.js`""
+                            "timeout" = 5
+                        }
+                    )
+                }
+            )
+            "PreToolUse" = @(
+                @{
+                    "matcher" = @{ "tools" = @("Edit") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/check-edit-token.js`""
+                            "timeout" = 5
+                        }
+                    )
+                },
+                @{
+                    "matcher" = @{ "tools" = @("Write") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/check-edit-token.js`""
+                            "timeout" = 5
+                        }
+                    )
+                },
+                @{
+                    "matcher" = @{ "tools" = @("Bash") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/check-commit-gate.js`""
+                            "timeout" = 5
+                        }
+                    )
+                }
+            )
+            "PostToolUse" = @(
+                @{
+                    "matcher" = @{ "tools" = @("Task") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/grant-edit-token.js`""
+                            "timeout" = 10
+                        }
+                    )
+                },
+                @{
+                    "matcher" = @{ "tools" = @("Edit") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/track-edit.js`""
+                            "timeout" = 5
+                        }
+                    )
+                },
+                @{
+                    "matcher" = @{ "tools" = @("Write") }
+                    "hooks" = @(
+                        @{
+                            "type" = "command"
+                            "command" = "node `"{{HOOKS_DIR}}/track-edit.js`""
+                            "timeout" = 5
+                        }
+                    )
+                }
+            )
+        }
+    }
+    $defaultJson = $defaultSettings | ConvertTo-Json -Depth 10
+    Set-Content -Path $oneDriveSettingsTemplate -Value $defaultJson -Encoding UTF8
+    Write-Log "Created default settings template in OneDrive"
+}
+
+# Read template and replace placeholders
+Write-Log "Reading settings template from OneDrive..."
+$settingsTemplate = Get-Content $oneDriveSettingsTemplate -Raw
+$settingsWithPaths = $settingsTemplate -replace '\{\{HOOKS_DIR\}\}', $localHooksDir.Replace('\', '\\')
+
+# Preserve existing permissions if settings.json already exists
+$existingPermissions = $null
+if (Test-Path $settingsFile) {
+    try {
+        $existingSettings = Get-Content $settingsFile -Raw | ConvertFrom-Json
+        if ($existingSettings.permissions) {
+            $existingPermissions = $existingSettings.permissions
+            Write-Log "Preserving existing permissions configuration"
+        }
+    } catch {
+        Write-Log "Could not read existing settings: $_" "WARN"
+    }
+}
+
+# Parse the processed settings
+$settingsContent = $settingsWithPaths | ConvertFrom-Json
+
+# Merge back existing permissions if they exist
+if ($existingPermissions) {
+    $settingsContent | Add-Member -NotePropertyName "permissions" -NotePropertyValue $existingPermissions -Force
+}
+
+# Write the final settings.json
+try {
+    $settingsJson = $settingsContent | ConvertTo-Json -Depth 10
+    Set-Content -Path $settingsFile -Value $settingsJson -Encoding UTF8
+    Write-Log "Settings.json configured with OneDrive-synced hooks (NEW format)" "OK"
+} catch {
+    Write-Log "Failed to update settings.json: $_" "ERROR"
+}
+
+Write-Log "SDLC enforcement hooks and settings configured" "OK"
+
+# ============================================
 # Completion
 # ============================================
 Write-Host ""
@@ -796,7 +1018,9 @@ $completionMessage = "Installation completed successfully!`n`n" +
     "- Hindsight MCP server configured`n" +
     "- CLAUDE.md auto-sync enabled`n" +
     "- AWS Bedrock (via SSO) configured`n" +
-    "- CLAUDE_MODEL environment variable set`n`n" +
+    "- CLAUDE_MODEL environment variable set`n" +
+    "- SDLC enforcement hooks (synced via OneDrive)`n" +
+    "- Settings.json with NEW hook format (auto-synced)`n`n" +
     "Next steps:`n" +
     "1. Open a NEW terminal/command prompt`n" +
     "2. Run: claude`n" +

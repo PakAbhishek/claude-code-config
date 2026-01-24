@@ -245,7 +245,7 @@ Multiple specific recall queries with terms from Step 2.
 ### 🚀 One-Click Installation (EASIEST)
 
 #### Windows (Personal - Includes Hindsight)
-1. Navigate to: `OneDrive - PakEnergy\Claude Backup\claude-config\`
+1. Navigate to: `OneDrive\Claude Backup\claude-config\`
 2. **Double-click**: `Install-Claude-Code.bat`
 3. Follow GUI prompts
 4. ✅ Done!
@@ -267,6 +267,8 @@ Multiple specific recall queries with terms from Step 2.
 **After installation:**
 - Claude Code ready to use immediately
 - CLAUDE.md auto-syncs across all machines
+- Settings.json with NEW hook format (auto-synced)
+- SDLC enforcement hooks configured and synced
 - Hindsight MCP server configured
 - AWS Bedrock via SSO fully configured
 - CLAUDE_MODEL env var set to Opus 4.5
@@ -280,10 +282,10 @@ If you prefer manual setup:
 
 ```bash
 # Windows
-copy "%USERPROFILE%\OneDrive - PakEnergy\Claude Backup\claude-config\CLAUDE.md" "%USERPROFILE%\.claude\CLAUDE.md"
+copy "%USERPROFILE%\OneDrive\Claude Backup\claude-config\CLAUDE.md" "%USERPROFILE%\.claude\CLAUDE.md"
 
 # Mac/Linux
-cp "$HOME/OneDrive - PakEnergy/Claude Backup/claude-config/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+cp "$HOME/OneDrive/Claude Backup/claude-config/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 ```
 
 Note: Manual setup requires re-running the copy command to sync updates.
@@ -296,22 +298,14 @@ recall("test connection")
 Should connect to: `http://hindsight-achau.southcentralus.azurecontainer.io:8888`
 
 ### 3. Verify MCP configuration
-`~/.claude/.mcp.json` should have:
+`~/.claude/settings.json` should have:
 ```json
 {
   "mcpServers": {
     "hindsight": {
-      "type": "http",
       "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
     }
   }
-}
-```
-
-And `~/.claude/settings.json` should include:
-```json
-{
-  "enabledMcpjsonServers": ["hindsight"]
 }
 ```
 
@@ -360,12 +354,12 @@ And `~/.claude/settings.json` should include:
 ## 📋 Maintenance
 
 **Synced Locations:**
-- **Source of truth:** `~/OneDrive - PakEnergy/Claude Backup/claude-config/CLAUDE.md`
+- **Source of truth:** `~/OneDrive/Claude Backup/claude-config/CLAUDE.md`
 - **Local reference:** `~/.claude/CLAUDE.md` (symlink or auto-synced copy)
 - **Memory:** Hindsight cloud server (automatic, no sync needed)
 
 **To update protocols across all machines:**
-1. Edit the OneDrive version: `~/OneDrive - PakEnergy/Claude Backup/claude-config/CLAUDE.md`
+1. Edit the OneDrive version: `~/OneDrive/Claude Backup/claude-config/CLAUDE.md`
 2. OneDrive syncs the file across machines
 3. Local copies update automatically:
    - **Symlink**: Instant (real-time)
@@ -378,6 +372,12 @@ And `~/.claude/settings.json` should include:
 ## Version History
 
 > **Note:** Older versions (v3.0.1 - v3.0.19) archived in Hindsight. Query with: `recall("installer version history")`
+
+### v3.0.26 (2026-01-22)
+**Settings.json Auto-Sync with NEW Hook Format** - Fixed hook validation errors by migrating to new hook matcher format (`"tools": ["ToolName"]` instead of `"tool_name": "ToolName"`). Settings.json now syncs from OneDrive template across all machines, ensuring hook configurations, model settings, and permissions stay consistent. Both Windows and Mac/Linux installers updated.
+
+### v3.0.25 (2026-01-20)
+**SDLC Enforcement Hooks Auto-Sync** - Added automatic syncing of `~/.claude/hooks` directory across machines via OneDrive symlink. Enforcement hooks now work consistently on all machines without manual setup.
 
 ### v3.0.24 (2026-01-20)
 **Custom Commands Auto-Sync** - Added automatic syncing of `~/.claude/commands` directory across machines via OneDrive symlink. Slash commands now work on all machines.
@@ -396,4 +396,4 @@ And `~/.claude/settings.json` should include:
 
 ---
 
-*Last Updated: 2026-01-20 (v3.0.24)*
+*Last Updated: 2026-01-22 (v3.0.26)*
