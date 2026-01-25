@@ -248,6 +248,7 @@ Updates preserve your configuration while upgrading components.
 | Document | Audience | Description |
 |----------|----------|-------------|
 | [README.md](README.md) | New Users | This file - quick start and overview |
+| [HINDSIGHT-SETUP.md](HINDSIGHT-SETUP.md) | All Users | Automated memory retention and Hindsight integration |
 | [SECURITY.md](SECURITY.md) | Security Auditors | Security architecture and compliance |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | CTOs/Architects | System design and integration |
 | [INSTALLER-README.md](INSTALLER-README.md) | Developers | Detailed installer documentation |

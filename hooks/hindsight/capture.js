@@ -38,7 +38,7 @@ const IMPORTANT_TOOLS = new Set([
 ]);
 
 // Configuration - CLOUD ENDPOINT
-const HINDSIGHT_HOST = 'hindsight-achau.southcentralus.azurecontainer.io';
+const HINDSIGHT_HOST = '34.174.13.163';
 const HINDSIGHT_PORT = 8888;
 const BANK_ID = 'claude-code';
 

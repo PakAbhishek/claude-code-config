@@ -77,6 +77,16 @@
     ],
     "PostToolUse": [
       {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/hindsight/capture.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "Task",
         "hooks": [
           {
@@ -111,7 +121,12 @@
   "provider": "bedrock",
   "mcpServers": {
     "hindsight": {
-      "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+      "transport": "sse",
+      "url": "http://34.174.13.163:8888/mcp/claude-code/"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"]
     }
   }
 }
