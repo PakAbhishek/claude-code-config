@@ -373,6 +373,9 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 > **Note:** Older versions (v3.0.1 - v3.0.19) archived in Hindsight. Query with: `recall("installer version history")`
 
+### v3.0.27 (2026-01-25)
+**AWS SSO Inline Execution Fix** - Fixed issue where AWS SSO login window failed to open during installer execution. Changed from spawning a new CMD window to running `aws sso login` inline in the current PowerShell session. This avoids reliability issues with window spawning from nested elevation contexts (bat → elevated cmd → PowerShell → new cmd).
+
 ### v3.0.26 (2026-01-22)
 **Settings.json Auto-Sync with NEW Hook Format** - Fixed hook validation errors by migrating to new hook matcher format (`"tools": ["ToolName"]` instead of `"tool_name": "ToolName"`). Settings.json now syncs from OneDrive template across all machines, ensuring hook configurations, model settings, and permissions stay consistent. Both Windows and Mac/Linux installers updated.
 
@@ -396,4 +399,4 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 ---
 
-*Last Updated: 2026-01-22 (v3.0.26)*
+*Last Updated: 2026-01-25 (v3.0.27)*
