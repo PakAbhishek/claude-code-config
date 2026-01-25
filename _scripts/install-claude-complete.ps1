@@ -1,7 +1,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Windows
-# v3.0.26 - Settings.json auto-sync with NEW hook format
+# v3.0.27 - Run AWS SSO login inline (fix window spawn issue)
 # ============================================
 
 # ============================================
@@ -507,53 +507,26 @@ if (-not $ssoLoggedIn) {
             Write-Host "============================================" -ForegroundColor Cyan
             Write-Host ""
             Write-Host "Opening browser for PakEnergy SSO authentication..." -ForegroundColor Yellow
+            Write-Host "Complete the login in your browser, then return here." -ForegroundColor Yellow
             Write-Host ""
 
-            # IMPORTANT: AWS SSO requires a proper Windows console.
-            # When PowerShell is elevated via UAC, it may not have a console attached.
-            # Solution: Launch aws sso login in a NEW cmd.exe window that waits for completion.
-            Write-Log "Launching SSO login in new console window..."
+            # Run aws sso login directly in the current PowerShell session
+            # This avoids issues with spawning new windows from nested elevation contexts
+            Write-Log "Running aws sso login inline..."
 
-            $ssoScriptPath = "$env:TEMP\aws-sso-login.bat"
-            @"
-@echo off
-echo ============================================
-echo AWS SSO Login
-echo ============================================
-echo.
-echo Logging into PakEnergy AWS SSO...
-echo Browser will open for authentication.
-echo.
-aws sso login
-echo.
-if %ERRORLEVEL% NEQ 0 (
-    echo SSO login failed with error code %ERRORLEVEL%
-    echo ERROR > "$env:TEMP\sso-result.txt"
-) else (
-    echo SUCCESS > "$env:TEMP\sso-result.txt"
-)
-echo.
-echo Press any key to close this window...
-pause >nul
-"@ | Set-Content -Path $ssoScriptPath -Encoding ASCII
-
-            # Remove previous result file
-            Remove-Item -Path "$env:TEMP\sso-result.txt" -Force -ErrorAction SilentlyContinue
-
-            # Launch in a new cmd.exe window and wait for it to complete
-            $ssoProcess = Start-Process cmd.exe -ArgumentList "/c `"$ssoScriptPath`"" -PassThru -Wait
-            Write-Log "SSO process exited with code: $($ssoProcess.ExitCode)"
-
-            # Check result file
-            $ssoResultFile = "$env:TEMP\sso-result.txt"
-            $ssoOutput = ""
-            if (Test-Path $ssoResultFile) {
-                $ssoOutput = Get-Content $ssoResultFile -Raw
-                Write-Log "SSO result: $ssoOutput"
+            $ssoExitCode = 0
+            try {
+                # Run aws sso login and capture exit code
+                & aws sso login
+                $ssoExitCode = $LASTEXITCODE
+                Write-Log "aws sso login exited with code: $ssoExitCode"
+            } catch {
+                Write-Log "aws sso login threw exception: $_" "ERROR"
+                $ssoExitCode = 1
             }
 
-            # Check result - SUCCESS means SSO command exited cleanly
-            if ($ssoOutput -match "SUCCESS") {
+            # Check result - exit code 0 means SSO command completed successfully
+            if ($ssoExitCode -eq 0) {
                 Write-Log "AWS SSO login command completed successfully"
                 Write-Host ""
                 Write-Host "Verifying AWS authentication..." -ForegroundColor Cyan
@@ -748,9 +721,9 @@ Would you like to retry the entire SSO login process?
                     }
                 }
             } else {
-                # SSO command failed or result unknown
-                Write-Log "SSO login failed or result unknown: $ssoOutput" "ERROR"
-                $retryChoice = Show-MessageBox -Message "AWS SSO login failed.`n`nThis could mean:`n- Network connectivity issues`n- Browser login was cancelled`n- SSO session expired`n`nWould you like to retry?" -Buttons YesNo -Icon Error
+                # SSO command failed
+                Write-Log "SSO login failed with exit code: $ssoExitCode" "ERROR"
+                $retryChoice = Show-MessageBox -Message "AWS SSO login failed (exit code: $ssoExitCode).`n`nThis could mean:`n- Network connectivity issues`n- Browser login was cancelled`n- SSO session expired`n`nWould you like to retry?" -Buttons YesNo -Icon Error
 
                 if ($retryChoice -eq [System.Windows.Forms.DialogResult]::No) {
                     $ssoRetry = $false
