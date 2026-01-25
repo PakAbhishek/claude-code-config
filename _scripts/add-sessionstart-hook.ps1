@@ -82,13 +82,15 @@ try {
         Write-Host "Adding mcpServers with Hindsight..."
         $settings | Add-Member -NotePropertyName 'mcpServers' -NotePropertyValue ([PSCustomObject]@{
             hindsight = [PSCustomObject]@{
-                url = "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+                transport = "sse"
+                url = "http://34.174.13.163:8888/mcp/claude-code/"
             }
         }) -Force
     } elseif (-not $settings.mcpServers.hindsight) {
         Write-Host "Adding Hindsight to mcpServers..."
         $settings.mcpServers | Add-Member -NotePropertyName 'hindsight' -NotePropertyValue ([PSCustomObject]@{
-            url = "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+            transport = "sse"
+            url = "http://34.174.13.163:8888/mcp/claude-code/"
         }) -Force
     }
 

@@ -7,7 +7,8 @@
   },
   "mcpServers": {
     "hindsight": {
-      "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+      "transport": "sse",
+      "url": "http://34.174.13.163:8888/mcp/claude-code/"
     }
   },
   "hooks": {
@@ -69,6 +70,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.claude/hooks/hindsight/capture.js\"",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Task",
         "hooks": [
