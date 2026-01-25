@@ -214,7 +214,7 @@ if !HINDSIGHT_RESULT! EQU 0 (
 ) else (
     echo [WARN] Hindsight MCP configuration returned non-zero exit code
     echo [%DATE% %TIME%] WARNING: add-hindsight.ps1 returned !HINDSIGHT_RESULT! >> "%LOG_FILE%"
-    echo You may need to run manually: claude mcp add --transport http hindsight http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/
+    echo You may need to run manually: claude mcp add --transport http hindsight http://34.174.13.163:8888/mcp/claude-code/
 )
 echo.
 

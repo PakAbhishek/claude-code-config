@@ -266,7 +266,7 @@ Failed to connect to Hindsight server
 **Fix:**
 ```bash
 # Test connection
-curl http://hindsight-achau.southcentralus.azurecontainer.io:8888
+curl http://34.174.13.163:8888
 
 # If fails, check:
 1. Firewall blocking port 8888
@@ -274,7 +274,7 @@ curl http://hindsight-achau.southcentralus.azurecontainer.io:8888
 
 # Manual MCP configuration
 claude mcp add --transport http hindsight \
-  http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/
+  http://34.174.13.163:8888/mcp/claude-code/
 
 # Verify
 claude mcp list
@@ -378,7 +378,7 @@ aws sts get-caller-identity
 
 ```bash
 claude mcp add --transport http hindsight \
-  http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/
+  http://34.174.13.163:8888/mcp/claude-code/
 
 # Verify
 claude mcp list

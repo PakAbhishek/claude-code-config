@@ -43,7 +43,7 @@ else
 fi
 
 echo -n "Hindsight MCP: "
-if curl -s --max-time 5 http://hindsight-achau.southcentralus.azurecontainer.io:8888 &> /dev/null; then
+if curl -s --max-time 5 http://34.174.13.163:8888 &> /dev/null; then
     echo "✓ Reachable"
 else
     echo "✗ Unreachable"

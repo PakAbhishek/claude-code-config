@@ -23,7 +23,7 @@ def main():
             # Check if Hindsight is already configured
             if (settings.get("mcpServers") and
                 settings["mcpServers"].get("hindsight") and
-                settings["mcpServers"]["hindsight"].get("url") == "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"):
+                settings["mcpServers"]["hindsight"].get("url") == "http://34.174.13.163:8888/mcp/claude-code/"):
                 print("Hindsight MCP server already configured correctly")
                 return 0
 
@@ -34,7 +34,7 @@ def main():
             # Add Hindsight config
             settings["mcpServers"]["hindsight"] = {
                 "type": "http",
-                "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+                "url": "http://34.174.13.163:8888/mcp/claude-code/"
             }
 
             # Write back to file
@@ -48,7 +48,7 @@ def main():
                 "mcpServers": {
                     "hindsight": {
                         "type": "http",
-                        "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+                        "url": "http://34.174.13.163:8888/mcp/claude-code/"
                     }
                 }
             }

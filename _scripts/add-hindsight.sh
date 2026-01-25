@@ -5,7 +5,7 @@
 # v3.0.6 - Uses CLI method instead of deprecated settings.json
 # ============================================
 
-HINDSIGHT_URL="http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+HINDSIGHT_URL="http://34.174.13.163:8888/mcp/claude-code/"
 
 echo "Configuring Hindsight MCP server..."
 

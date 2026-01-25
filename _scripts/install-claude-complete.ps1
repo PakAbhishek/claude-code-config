@@ -865,7 +865,7 @@ if (-not (Test-Path $oneDriveSettingsTemplate)) {
         "model" = "us.anthropic.claude-opus-4-5-20251101-v1:0"
         "mcpServers" = @{
             "hindsight" = @{
-                "url" = "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+                "url" = "http://34.174.13.163:8888/mcp/claude-code/"
             }
         }
         "hooks" = @{

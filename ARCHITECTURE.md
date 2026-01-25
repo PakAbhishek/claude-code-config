@@ -216,7 +216,7 @@ graph LR
     },
     "networking": {
       "publicIP": "Static",
-      "dns": "hindsight-achau.southcentralus.azurecontainer.io"
+      "dns": "34.174.13.163"
     }
   }
 }

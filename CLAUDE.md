@@ -295,7 +295,7 @@ In Claude Code, run:
 ```
 recall("test connection")
 ```
-Should connect to: `http://hindsight-achau.southcentralus.azurecontainer.io:8888`
+Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 ### 3. Verify MCP configuration
 `~/.claude/settings.json` should have:
@@ -303,7 +303,7 @@ Should connect to: `http://hindsight-achau.southcentralus.azurecontainer.io:8888
 {
   "mcpServers": {
     "hindsight": {
-      "url": "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+      "url": "http://34.174.13.163:8888/mcp/claude-code/"
     }
   }
 }

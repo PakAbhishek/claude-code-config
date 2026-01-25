@@ -147,7 +147,7 @@ if command -v claude &> /dev/null; then
     fi
 else
     echo "WARNING: Claude Code not found. Hindsight MCP server not configured."
-    echo "  Run 'claude mcp add --transport http hindsight http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/' after installing Claude Code."
+    echo "  Run 'claude mcp add --transport http hindsight http://34.174.13.163:8888/mcp/claude-code/' after installing Claude Code."
 fi
 echo
 

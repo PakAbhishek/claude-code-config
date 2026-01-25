@@ -274,7 +274,7 @@ dry_run() {
     echo "   • Run: aws sso login"
     echo ""
     echo "5. Configure Hindsight MCP:"
-    echo "   • Register server: http://hindsight-achau.southcentralus.azurecontainer.io:8888"
+    echo "   • Register server: http://34.174.13.163:8888"
     echo ""
     echo "6. Install session hooks:"
     echo "   • check-aws-sso.js"

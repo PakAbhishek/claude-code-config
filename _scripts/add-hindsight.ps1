@@ -4,7 +4,7 @@
 # v3.0.20 - Project-aware MCP registration + deprecated config cleanup
 
 param(
-    [string]$HindsightUrl = "http://hindsight-achau.southcentralus.azurecontainer.io:8888/mcp/claude-code/"
+    [string]$HindsightUrl = "http://34.174.13.163:8888/mcp/claude-code/"
 )
 
 # Helper function to run claude commands and filter out libuv assertion errors
