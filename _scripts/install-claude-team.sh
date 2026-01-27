@@ -2,7 +2,7 @@
 # ============================================
 # Claude Code Team Installation
 # One-click installer for Mac/Linux (Team Version)
-# v1.5.0 - Dynamic profile detection and AWS_PROFILE fix
+# v1.5.1 - Fix npm EACCES permission error on macOS
 # ============================================
 #
 # INSTALLATION:
@@ -258,6 +258,54 @@ echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}Step 4: Installing/Updating Claude Code${NC}"
 echo -e "${CYAN}============================================${NC}"
 
+# Helper function to check if npm global install needs sudo
+# Returns 0 (true) if sudo is needed, 1 (false) if not
+npm_needs_sudo() {
+    # Get npm's global prefix
+    NPM_PREFIX=$(npm config get prefix 2>/dev/null)
+    if [ -z "$NPM_PREFIX" ]; then
+        NPM_PREFIX="/usr/local"
+    fi
+
+    # Check if the node_modules directory under prefix is writable
+    NPM_GLOBAL_DIR="$NPM_PREFIX/lib/node_modules"
+
+    # If directory exists, check if writable
+    if [ -d "$NPM_GLOBAL_DIR" ]; then
+        if [ -w "$NPM_GLOBAL_DIR" ]; then
+            return 1  # No sudo needed
+        else
+            return 0  # Needs sudo
+        fi
+    else
+        # Directory doesn't exist, check if parent is writable
+        NPM_LIB_DIR="$NPM_PREFIX/lib"
+        if [ -d "$NPM_LIB_DIR" ]; then
+            if [ -w "$NPM_LIB_DIR" ]; then
+                return 1  # No sudo needed
+            else
+                return 0  # Needs sudo
+            fi
+        else
+            # Check prefix itself
+            if [ -w "$NPM_PREFIX" ]; then
+                return 1  # No sudo needed
+            else
+                return 0  # Needs sudo
+            fi
+        fi
+    fi
+}
+
+# Check if sudo is needed for npm global installs
+USE_SUDO=""
+if npm_needs_sudo; then
+    echo -e "${YELLOW}Note: npm global directory requires elevated permissions${NC}"
+    NPM_PREFIX=$(npm config get prefix 2>/dev/null)
+    echo "  npm prefix: $NPM_PREFIX"
+    USE_SUDO="sudo"
+fi
+
 if command -v claude &> /dev/null; then
     CLAUDE_VERSION=$(claude --version 2>/dev/null || echo "unknown")
     echo -e "${GREEN}✓ Claude Code is installed: $CLAUDE_VERSION${NC}"
@@ -271,16 +319,27 @@ if command -v claude &> /dev/null; then
 
     if [[ "$UPDATE_CLAUDE" =~ ^[Yy]$ ]]; then
         echo "Updating Claude Code..."
-        npm update -g @anthropic-ai/claude-code
+        if [ -n "$USE_SUDO" ]; then
+            echo -e "${YELLOW}Using sudo for npm global update...${NC}"
+        fi
+        $USE_SUDO npm update -g @anthropic-ai/claude-code
         echo -e "${GREEN}✓ Claude Code updated${NC}"
     fi
 else
     echo "Installing Claude Code..."
-    npm install -g @anthropic-ai/claude-code
+    if [ -n "$USE_SUDO" ]; then
+        echo -e "${YELLOW}Using sudo for npm global install...${NC}"
+    fi
+    $USE_SUDO npm install -g @anthropic-ai/claude-code
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Claude Code installed${NC}"
     else
         echo -e "${RED}✗ Failed to install Claude Code${NC}"
+        echo ""
+        echo "Troubleshooting:"
+        echo "  1. Try running: sudo npm install -g @anthropic-ai/claude-code"
+        echo "  2. Or fix npm permissions: https://docs.npmjs.com/resolving-eacces-permissions-errors"
+        echo "  3. Or use nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
         exit 1
     fi
 fi
