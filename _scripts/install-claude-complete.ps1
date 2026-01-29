@@ -763,7 +763,7 @@ Write-Log "============================================" "STEP"
 Write-Log "Step 6: Configuring AWS Credential Push to GCP Hindsight" "STEP"
 Write-Log "============================================" "STEP"
 
-$hindsightSetupDir = "$env:USERPROFILE\OneDrive\Claude Backup\hindsight-setup"
+$hindsightSetupDir = "$env:USERPROFILE\OneDrive\Claude Backup\claude-config\hindsight-setup"
 $autoPushScript = "$hindsightSetupDir\Auto-Push-AWS-Credentials.ps1"
 
 Write-Log "Hindsight setup dir: $hindsightSetupDir"

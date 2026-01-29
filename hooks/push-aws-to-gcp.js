@@ -8,10 +8,10 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
-// Path to the PowerShell push script (synced via OneDrive)
+// Path to the PowerShell push script (in git repo, synced via OneDrive)
 const PUSH_SCRIPT = path.join(
   process.env.USERPROFILE || process.env.HOME,
-  'OneDrive', 'Claude Backup', 'hindsight-setup', 'Auto-Push-AWS-Credentials.ps1'
+  'OneDrive', 'Claude Backup', 'claude-config', 'hindsight-setup', 'Auto-Push-AWS-Credentials.ps1'
 );
 
 function main() {

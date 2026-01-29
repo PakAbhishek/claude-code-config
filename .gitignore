@@ -8,6 +8,7 @@ Thumbs.db
 *.key
 *.env
 *credentials*
+!hindsight-setup/*Credentials*
 *.secrets
 
 # Backup files
