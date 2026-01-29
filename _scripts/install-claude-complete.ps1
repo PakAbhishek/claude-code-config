@@ -1,7 +1,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Windows
-# v3.0.27 - Run AWS SSO login inline (fix window spawn issue)
+# v3.0.29 - Add SessionStart hook for GCP credential push + bug fixes
 # ============================================
 
 # ============================================
@@ -134,6 +134,7 @@ This installer will:
 - Configure Hindsight MCP server
 - Set up auto-sync for CLAUDE.md
 - Install AWS CLI and configure Bedrock via SSO
+- Set up automatic AWS credential push to GCP Hindsight
 
 Click OK to begin installation.
 "@ -Title "Claude Code Complete Installer" -Buttons OKCancel -Icon Information
@@ -755,11 +756,107 @@ $env:CLAUDE_MODEL = $bedrockModel
 Write-Log "CLAUDE_MODEL set to: $bedrockModel" "OK"
 
 # ============================================
-# Step 6: SDLC Enforcement Hooks & Settings Sync
+# Step 6: AWS Credential Push to GCP Hindsight
 # ============================================
 Write-Host ""
 Write-Log "============================================" "STEP"
-Write-Log "Step 6: Configuring SDLC Enforcement Hooks & Settings Sync" "STEP"
+Write-Log "Step 6: Configuring AWS Credential Push to GCP Hindsight" "STEP"
+Write-Log "============================================" "STEP"
+
+$hindsightSetupDir = "$env:USERPROFILE\OneDrive\Claude Backup\hindsight-setup"
+$autoPushScript = "$hindsightSetupDir\Auto-Push-AWS-Credentials.ps1"
+
+Write-Log "Hindsight setup dir: $hindsightSetupDir"
+Write-Log "Auto-push script: $autoPushScript"
+
+if (Test-Path $autoPushScript) {
+    Write-Log "Auto-Push script found, configuring Scheduled Task..." "OK"
+
+    try {
+        # Create Scheduled Task for login-time credential push
+        $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$autoPushScript`""
+        $trigger = New-ScheduledTaskTrigger -AtLogon -User $env:USERNAME
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+        $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+
+        # Remove existing if present
+        Unregister-ScheduledTask -TaskName 'Hindsight-AWS-Credential-Push' -Confirm:$false -ErrorAction SilentlyContinue
+        Write-Log "Removed existing Scheduled Task (if any)"
+
+        # Register new task
+        Register-ScheduledTask -TaskName 'Hindsight-AWS-Credential-Push' -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description 'Auto-push AWS credentials to GCP Hindsight on login' | Out-Null
+        Write-Log "Scheduled Task 'Hindsight-AWS-Credential-Push' registered successfully" "OK"
+
+        # Run initial credential push now (if AWS SSO is logged in)
+        Write-Host ""
+        Write-Host "Pushing AWS credentials to GCP Hindsight..." -ForegroundColor Cyan
+        Write-Log "Running initial credential push..."
+
+        try {
+            & $autoPushScript
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log "Initial credential push completed" "OK"
+            } else {
+                Write-Log "Initial credential push returned non-zero exit code: $LASTEXITCODE" "WARN"
+            }
+        } catch {
+            Write-Log "Initial credential push failed: $_" "WARN"
+        }
+
+        # Verify Hindsight health (with retry)
+        Write-Host ""
+        Write-Host "Verifying Hindsight MCP server health..." -ForegroundColor Cyan
+        Write-Log "Starting Hindsight health verification..."
+
+        $maxHealthRetries = 3
+        $healthCheckPassed = $false
+        for ($healthAttempt = 1; $healthAttempt -le $maxHealthRetries; $healthAttempt++) {
+            Write-Host "  Health check attempt $healthAttempt of $maxHealthRetries..." -NoNewline
+            Start-Sleep -Seconds 10
+
+            try {
+                $health = Invoke-RestMethod -Uri "http://34.174.13.163:8888/health" -TimeoutSec 10 -ErrorAction Stop
+                if ($health.status -eq "healthy") {
+                    Write-Host " [OK] Healthy" -ForegroundColor Green
+                    Write-Log "Hindsight health check PASSED: status=healthy" "OK"
+                    $healthCheckPassed = $true
+                    break
+                } else {
+                    Write-Host " [?] Status: $($health.status)" -ForegroundColor Yellow
+                    Write-Log "Hindsight health check returned: $($health.status)"
+                }
+            } catch {
+                Write-Host " [X] Connection failed" -ForegroundColor Yellow
+                Write-Log "Hindsight health check attempt $healthAttempt failed: $_"
+            }
+        }
+
+        if (-not $healthCheckPassed) {
+            Write-Log "Hindsight health check did not pass after $maxHealthRetries attempts" "WARN"
+            Write-Host ""
+            Write-Host "Note: Hindsight health check did not pass. This may be because:" -ForegroundColor Yellow
+            Write-Host "  - Containers are still starting up" -ForegroundColor Gray
+            Write-Host "  - Network connectivity to GCP" -ForegroundColor Gray
+            Write-Host "You can verify manually later with: recall('test')" -ForegroundColor Gray
+        }
+
+    } catch {
+        Write-Log "Failed to configure Scheduled Task: $_" "ERROR"
+        Show-MessageBox -Message "Failed to configure automatic credential push.`n`nError: $_`n`nYou can set this up manually later." -Icon Warning
+    }
+} else {
+    Write-Log "Auto-Push script not found at: $autoPushScript" "WARN"
+    Show-MessageBox -Message "Auto-Push script not found.`n`nExpected location:`n$autoPushScript`n`nAutomatic credential push will not be configured." -Icon Warning
+}
+
+Write-Log "AWS Credential Push configuration complete" "OK"
+
+# ============================================
+# Step 7: SDLC Enforcement Hooks & Settings Sync
+# ============================================
+Write-Host ""
+Write-Log "============================================" "STEP"
+Write-Log "Step 7: Configuring SDLC Enforcement Hooks & Settings Sync" "STEP"
 Write-Log "============================================" "STEP"
 
 $claudeDir = "$env:USERPROFILE\.claude"
@@ -992,6 +1089,7 @@ $completionMessage = "Installation completed successfully!`n`n" +
     "- CLAUDE.md auto-sync enabled`n" +
     "- AWS Bedrock (via SSO) configured`n" +
     "- CLAUDE_MODEL environment variable set`n" +
+    "- AWS credential auto-push to GCP Hindsight (on login)`n" +
     "- SDLC enforcement hooks (synced via OneDrive)`n" +
     "- Settings.json with NEW hook format (auto-synced)`n`n" +
     "Next steps:`n" +

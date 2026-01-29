@@ -260,9 +260,10 @@ Multiple specific recall queries with terms from Step 2.
 5. ✅ Installs/updates Claude Code to latest version
 6. ✅ Installs AWS CLI v2 (if needed)
 7. ✅ Configures AWS SSO for Bedrock access (opens browser for PakEnergy SSO login)
-8. ✅ Configures Hindsight MCP server automatically
-9. ✅ Sets up CLAUDE.md auto-sync (symlink or hook)
-10. ✅ Sets CLAUDE_MODEL environment variable for Bedrock
+8. ✅ Sets up automatic AWS credential push to GCP Hindsight (Scheduled Task)
+9. ✅ Configures Hindsight MCP server automatically
+10. ✅ Sets up CLAUDE.md auto-sync (symlink or hook)
+11. ✅ Sets CLAUDE_MODEL environment variable for Bedrock
 
 **After installation:**
 - Claude Code ready to use immediately
@@ -273,6 +274,7 @@ Multiple specific recall queries with terms from Step 2.
 - AWS Bedrock via SSO fully configured
 - CLAUDE_MODEL env var set to Opus 4.5
 - **AWS SSO credentials auto-refresh on each session start**
+- **AWS credentials auto-pushed to GCP Hindsight on login**
 - Zero manual configuration needed
 
 See [INSTALLER-README.md](./INSTALLER-README.md) for detailed installation guide.
@@ -373,6 +375,12 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 > **Note:** Older versions (v3.0.1 - v3.0.19) archived in Hindsight. Query with: `recall("installer version history")`
 
+### v3.0.29 (2026-01-29)
+**SessionStart Hook for GCP Credential Push** - Added `push-aws-to-gcp.js` hook that pushes AWS credentials to GCP Hindsight when Claude Code starts. Fixed bugs in Auto-Push script: printf `\n` not creating newlines (now uses echo), and `docker compose restart` not re-reading env_file (now uses `--force-recreate`). Updated Update-AWS-Credentials.bat to use simplified Auto-Push approach.
+
+### v3.0.28 (2026-01-28)
+**Automatic AWS Credential Push to GCP Hindsight** - Installer now registers a Windows Scheduled Task (`Hindsight-AWS-Credential-Push`) that automatically pushes AWS SSO credentials to GCP Hindsight on login. Also runs initial push during installation and verifies Hindsight health. Cleaned up obsolete GCP resources (aws-auth container, postgres:18 image, old scripts).
+
 ### v3.0.27 (2026-01-25)
 **AWS SSO Inline Execution Fix** - Fixed issue where AWS SSO login window failed to open during installer execution. Changed from spawning a new CMD window to running `aws sso login` inline in the current PowerShell session. This avoids reliability issues with window spawning from nested elevation contexts (bat → elevated cmd → PowerShell → new cmd).
 
@@ -399,4 +407,4 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 ---
 
-*Last Updated: 2026-01-25 (v3.0.27)*
+*Last Updated: 2026-01-29 (v3.0.29)*

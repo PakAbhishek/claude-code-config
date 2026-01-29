@@ -25,6 +25,11 @@
             "type": "command",
             "command": "node \"C:\\Users\\achau\\.claude\\hooks/check-aws-sso.js\"",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "node \"C:\\Users\\achau\\.claude\\hooks/push-aws-to-gcp.js\"",
+            "timeout": 180
           }
         ]
       },
