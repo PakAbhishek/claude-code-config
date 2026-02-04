@@ -33,6 +33,11 @@
             "type": "command",
             "command": "node \"$HOME/.claude/hooks/protocol-reminder.js\"",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"$HOME/.claude/hooks/suggest-worktree.js\"",
+            "timeout": 5
           }
         ]
       }

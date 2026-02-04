@@ -42,17 +42,17 @@ try {
 Log "Pushing credentials to GCP Hindsight..."
 
 try {
-    # Write credentials to the shared volume using echo (printf \n doesn't work from PowerShell)
-    $writeCredsCmd = "docker run --rm -v aws-creds:/shared alpine sh -c 'echo AWS_ACCESS_KEY_ID=$accessKey > /shared/credentials.env && echo AWS_SECRET_ACCESS_KEY=$secretKey >> /shared/credentials.env && echo AWS_SESSION_TOKEN=$sessionToken >> /shared/credentials.env && echo AWS_REGION=us-east-1 >> /shared/credentials.env'"
+    # Write credentials to the shared volume AND .env file for docker-compose
+    $writeCredsCmd = "docker run --rm -v aws-creds:/shared -v /home/achau:/app alpine sh -c 'echo AWS_ACCESS_KEY_ID=$accessKey > /shared/credentials.env && echo AWS_SECRET_ACCESS_KEY=$secretKey >> /shared/credentials.env && echo AWS_SESSION_TOKEN=$sessionToken >> /shared/credentials.env && echo AWS_REGION=us-east-1 >> /shared/credentials.env && cp /shared/credentials.env /app/.env'"
 
     $result = gcloud compute ssh hindsight-vm --project=hindsight-prod-9802 --zone=us-south1-a --command=$writeCredsCmd 2>&1
 
     if ($LASTEXITCODE -eq 0) {
-        Log "Credentials written successfully"
+        Log "Credentials written to volume and .env file"
 
         # Recreate litellm-proxy to re-read env_file (restart doesn't re-read env_file)
         Log "Recreating litellm-proxy with new credentials..."
-        $restartCmd = "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/achau:/app -v /var/lib/docker/volumes:/var/lib/docker/volumes:ro -w /app docker:cli docker compose up -d --force-recreate litellm-proxy"
+        $restartCmd = "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/achau:/app -w /app docker:cli docker compose --env-file .env up -d --force-recreate litellm-proxy"
         $restartResult = gcloud compute ssh hindsight-vm --project=hindsight-prod-9802 --zone=us-south1-a --command=$restartCmd 2>&1
 
         if ($LASTEXITCODE -eq 0) {

@@ -2,13 +2,10 @@
 setlocal EnableDelayedExpansion
 REM ============================================
 REM Claude Code Multi-Machine Setup Script
-REM v3.0.24 - Custom commands auto-sync
+REM v3.0.31 - Auto-detect OneDrive path for personal vs work machines
 REM Run this on each new machine to configure Claude Code
 REM ============================================
 
-REM Set paths
-set "CONFIG_DIR=%USERPROFILE%\OneDrive\Claude Backup\claude-config"
-set "SCRIPTS_DIR=%CONFIG_DIR%\_scripts"
 set "LOG_FILE=%TEMP%\claude-setup.log"
 
 echo ====================================
@@ -18,16 +15,55 @@ echo.
 
 REM Log to file for debugging
 echo [%DATE% %TIME%] Setup started > "%LOG_FILE%"
-echo [%DATE% %TIME%] CONFIG_DIR: %CONFIG_DIR% >> "%LOG_FILE%"
 
 REM ============================================
-REM Verify OneDrive path exists
+REM Auto-detect OneDrive path
+REM ============================================
+echo Detecting OneDrive path...
+set "ONEDRIVE_PATH="
+
+REM Check work machine path first (more specific)
+if exist "%USERPROFILE%\OneDrive - PakEnergy" (
+    set "ONEDRIVE_PATH=%USERPROFILE%\OneDrive - PakEnergy"
+    echo [OK] Found OneDrive - PakEnergy ^(work machine^)
+    echo [%DATE% %TIME%] OneDrive detected: OneDrive - PakEnergy >> "%LOG_FILE%"
+    goto :onedrive_found
+)
+
+REM Check personal machine path
+if exist "%USERPROFILE%\OneDrive" (
+    set "ONEDRIVE_PATH=%USERPROFILE%\OneDrive"
+    echo [OK] Found OneDrive ^(personal machine^)
+    echo [%DATE% %TIME%] OneDrive detected: OneDrive >> "%LOG_FILE%"
+    goto :onedrive_found
+)
+
+REM No OneDrive found
+echo ERROR: OneDrive folder not found!
+echo Checked:
+echo   - %USERPROFILE%\OneDrive - PakEnergy
+echo   - %USERPROFILE%\OneDrive
+echo.
+echo Please ensure OneDrive is installed and synced.
+echo [%DATE% %TIME%] ERROR: OneDrive not found >> "%LOG_FILE%"
+pause
+exit /b 1
+
+:onedrive_found
+set "CONFIG_DIR=%ONEDRIVE_PATH%\Claude Backup\claude-config"
+set "SCRIPTS_DIR=%CONFIG_DIR%\_scripts"
+
+echo [%DATE% %TIME%] CONFIG_DIR: %CONFIG_DIR% >> "%LOG_FILE%"
+echo.
+
+REM ============================================
+REM Verify config directory exists
 REM ============================================
 if not exist "%CONFIG_DIR%" (
-    echo ERROR: OneDrive path not found!
+    echo ERROR: Config directory not found!
     echo Expected: %CONFIG_DIR%
     echo.
-    echo Please ensure OneDrive is synced and try again.
+    echo Please ensure OneDrive is fully synced and try again.
     echo [%DATE% %TIME%] ERROR: CONFIG_DIR not found >> "%LOG_FILE%"
     pause
     exit /b 1

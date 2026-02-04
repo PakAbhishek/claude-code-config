@@ -2,7 +2,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Mac/Linux
-# v3.0.7 - Pipe-safe for curl | bash installation
+# v3.0.31 - Auto-detect OneDrive path for personal vs work machines
 # ============================================
 #
 # INSTALLATION:
@@ -368,7 +368,44 @@ echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}Step 7: Configuring AWS SSO for Bedrock${NC}"
 echo -e "${CYAN}============================================${NC}"
 
-CONFIG_DIR="$HOME/OneDrive - PakEnergy/Claude Backup/claude-config"
+# Auto-detect OneDrive path (works on both personal and work machines)
+echo -e "${CYAN}Auto-detecting OneDrive path...${NC}"
+
+# Source the OneDrive path utility
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib/get-onedrive-path.sh" ]; then
+    source "$SCRIPT_DIR/lib/get-onedrive-path.sh"
+    ONEDRIVE_PATH=$(get_onedrive_path)
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ OneDrive detected: $ONEDRIVE_PATH${NC}"
+    else
+        # Fallback: Try common paths
+        if [ -d "$HOME/OneDrive - PakEnergy" ]; then
+            ONEDRIVE_PATH="$HOME/OneDrive - PakEnergy"
+        elif [ -d "$HOME/OneDrive" ]; then
+            ONEDRIVE_PATH="$HOME/OneDrive"
+        else
+            echo -e "${RED}ERROR: OneDrive folder not found${NC}"
+            echo "Checked: OneDrive - PakEnergy, OneDrive"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ OneDrive detected (fallback): $ONEDRIVE_PATH${NC}"
+    fi
+else
+    # Utility not available, use inline detection
+    if [ -d "$HOME/OneDrive - PakEnergy" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive - PakEnergy"
+    elif [ -d "$HOME/OneDrive" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive"
+    else
+        echo -e "${RED}ERROR: OneDrive folder not found${NC}"
+        echo "Checked: OneDrive - PakEnergy, OneDrive"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ OneDrive detected: $ONEDRIVE_PATH${NC}"
+fi
+
+CONFIG_DIR="$ONEDRIVE_PATH/Claude Backup/claude-config"
 AWS_CONFIG_TEMPLATE="$CONFIG_DIR/aws-config-template"
 AWS_DIR="$HOME/.aws"
 AWS_CONFIG="$AWS_DIR/config"

@@ -331,6 +331,46 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 ---
 
+## 🔀 Parallel Sessions with Git Worktrees
+
+**Proactively suggest worktrees when user wants parallel or background work.**
+
+### When to Suggest `/worktree create`
+
+| Trigger | Example User Request |
+|---------|---------------------|
+| **Parallel keyword** | "Run this in parallel", "simultaneously", "at the same time" |
+| **Background keyword** | "In the background", "while I work on X" |
+| **Autonomous task** | "Run autonomously", "let it run", "unattended" |
+| **Long-running task** | Large refactors, migrations, test generation |
+| **Multiple independent tasks** | "Do X and also Y" where both are substantial |
+
+### How to Suggest
+
+When triggers detected, say:
+> "This would work well as a parallel session. Want me to create a worktree?
+> `/worktree create <descriptive-branch-name>`
+>
+> Then you can open a new terminal, cd to the worktree, and run Claude there."
+
+### Worktree Commands
+
+```bash
+/worktree create feature-name  # Create isolated worktree
+/worktree list                 # Show all worktrees
+/worktree status               # Detailed status
+/worktree remove feature-name  # Clean up after merge
+```
+
+### Autonomous Mode in Worktree
+
+```bash
+cd C:\project-feature-name
+claude -p "Your task" --allowedTools "Read,Edit,Write,Bash" --max-turns 50
+```
+
+---
+
 ## 🔄 Auto-Sync Architecture
 
 **How CLAUDE.md stays in sync:**
@@ -375,6 +415,12 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 > **Note:** Older versions (v3.0.1 - v3.0.19) archived in Hindsight. Query with: `recall("installer version history")`
 
+### v3.0.31 (2026-02-04)
+**Auto-Detect OneDrive Path for Personal vs Work Machines** - Created utility libraries (`Get-OneDrivePath.ps1`, `get-onedrive-path.sh`, `onedrive-path.js`) that auto-detect OneDrive folder. Checks "OneDrive - PakEnergy" (work) first, then "OneDrive" (personal). Updated all installers, setup scripts, and hooks to use auto-detection. Scripts now work seamlessly on both personal and work machines without configuration changes.
+
+### v3.0.30 (2026-02-01)
+**Git Worktrees for Parallel Claude Sessions** - Added `/worktree` slash command for managing git worktrees. Commands: `create`, `list`, `status`, `remove`. Includes cross-platform helper scripts (PowerShell + Bash). Added SessionStart hook that reminds Claude to suggest worktrees for parallel/autonomous tasks. CLAUDE.md updated with trigger keywords and suggestion guidance.
+
 ### v3.0.29 (2026-01-29)
 **SessionStart Hook for GCP Credential Push** - Added `push-aws-to-gcp.js` hook that pushes AWS credentials to GCP Hindsight when Claude Code starts. Fixed bugs in Auto-Push script: printf `\n` not creating newlines (now uses echo), and `docker compose restart` not re-reading env_file (now uses `--force-recreate`). Updated Update-AWS-Credentials.bat to use simplified Auto-Push approach.
 
@@ -407,4 +453,4 @@ Should connect to: `http://34.174.13.163:8888` (GCP Compute Engine)
 
 ---
 
-*Last Updated: 2026-01-29 (v3.0.29)*
+*Last Updated: 2026-02-04 (v3.0.31)*

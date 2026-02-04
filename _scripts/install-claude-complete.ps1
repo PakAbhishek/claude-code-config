@@ -1,7 +1,7 @@
 # ============================================
 # Claude Code Complete Installation & Setup
 # One-click installer for Windows
-# v3.0.29 - Add SessionStart hook for GCP credential push + bug fixes
+# v3.0.31 - Auto-detect OneDrive path for personal vs work machines
 # ============================================
 
 # ============================================
@@ -367,7 +367,21 @@ Write-Log "============================================" "STEP"
 Write-Log "Step 4: Configuring Hindsight & Auto-Sync" "STEP"
 Write-Log "============================================" "STEP"
 
-$configDir = "$env:USERPROFILE\OneDrive\Claude Backup\claude-config"
+# Auto-detect OneDrive path (works on both personal and work machines)
+Write-Log "Auto-detecting OneDrive path..."
+$libDir = Join-Path (Split-Path $MyInvocation.MyCommand.Path -Parent) "lib"
+. "$libDir\Get-OneDrivePath.ps1"
+
+try {
+    $oneDrivePath = Get-OneDrivePath
+    Write-Log "OneDrive detected: $oneDrivePath" "OK"
+} catch {
+    Write-Log "Failed to detect OneDrive: $_" "ERROR"
+    Show-MessageBox -Message "OneDrive folder not found.`n`nPlease ensure OneDrive is installed and synced.`n`nChecked locations:`n- OneDrive - PakEnergy`n- OneDrive" -Icon Error
+    exit 1
+}
+
+$configDir = "$oneDrivePath\Claude Backup\claude-config"
 $scriptsDir = "$configDir\_scripts"
 $setupScript = "$scriptsDir\setup-new-machine.bat"
 
@@ -763,7 +777,7 @@ Write-Log "============================================" "STEP"
 Write-Log "Step 6: Configuring AWS Credential Push to GCP Hindsight" "STEP"
 Write-Log "============================================" "STEP"
 
-$hindsightSetupDir = "$env:USERPROFILE\OneDrive\Claude Backup\claude-config\hindsight-setup"
+$hindsightSetupDir = "$configDir\hindsight-setup"
 $autoPushScript = "$hindsightSetupDir\Auto-Push-AWS-Credentials.ps1"
 
 Write-Log "Hindsight setup dir: $hindsightSetupDir"

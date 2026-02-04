@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # Claude Code Multi-Machine Setup Script
-# v3.0.26 - Settings.json auto-sync with NEW hook format
+# v3.0.31 - Auto-detect OneDrive path for personal vs work machines
 # Run this on each new Mac/Linux machine to configure Claude Code
 # ============================================
 
@@ -10,20 +10,56 @@ echo "Claude Code Multi-Machine Setup"
 echo "===================================="
 echo
 
+# ============================================
+# Auto-detect OneDrive path
+# ============================================
+echo "Detecting OneDrive path..."
+
+# Source the OneDrive path utility if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ONEDRIVE_PATH=""
+
+if [ -f "$SCRIPT_DIR/lib/get-onedrive-path.sh" ]; then
+    source "$SCRIPT_DIR/lib/get-onedrive-path.sh"
+    ONEDRIVE_PATH=$(get_onedrive_path)
+    if [ $? -ne 0 ]; then
+        ONEDRIVE_PATH=""
+    fi
+fi
+
+# Fallback to manual detection if utility failed
+if [ -z "$ONEDRIVE_PATH" ]; then
+    # Check work machine path first (more specific)
+    if [ -d "$HOME/OneDrive - PakEnergy" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive - PakEnergy"
+        echo "✓ Found OneDrive - PakEnergy (work machine)"
+    # Check personal machine path
+    elif [ -d "$HOME/OneDrive" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive"
+        echo "✓ Found OneDrive (personal machine)"
+    fi
+else
+    echo "✓ OneDrive detected: $ONEDRIVE_PATH"
+fi
+
 # Check for config directory (OneDrive or git-cloned)
-ONEDRIVE_CONFIG="$HOME/OneDrive/Claude Backup/claude-config"
 GIT_CONFIG="$HOME/claude-code-config"
 
-if [ -d "$ONEDRIVE_CONFIG" ]; then
-    CONFIG_DIR="$ONEDRIVE_CONFIG"
+if [ -n "$ONEDRIVE_PATH" ] && [ -d "$ONEDRIVE_PATH/Claude Backup/claude-config" ]; then
+    CONFIG_DIR="$ONEDRIVE_PATH/Claude Backup/claude-config"
     echo "Using OneDrive config: $CONFIG_DIR"
 elif [ -d "$GIT_CONFIG" ]; then
     CONFIG_DIR="$GIT_CONFIG"
     echo "Using git-cloned config: $CONFIG_DIR"
 else
     echo "ERROR: No config directory found!"
-    echo "Expected one of:"
-    echo "  - $ONEDRIVE_CONFIG"
+    echo "Checked locations:"
+    if [ -n "$ONEDRIVE_PATH" ]; then
+        echo "  - $ONEDRIVE_PATH/Claude Backup/claude-config"
+    else
+        echo "  - $HOME/OneDrive - PakEnergy/Claude Backup/claude-config"
+        echo "  - $HOME/OneDrive/Claude Backup/claude-config"
+    fi
     echo "  - $GIT_CONFIG"
     exit 1
 fi

@@ -5,6 +5,9 @@ echo This will stop both VM and Database.
 echo Savings: ~$11/day while stopped.
 echo.
 
+REM Use gcloud.cmd explicitly to avoid shell script conflict
+set "GCLOUD=gcloud.cmd"
+
 set /p confirm=Stop Hindsight? (Y/N):
 if /i not "%confirm%"=="Y" (
     echo Cancelled.
@@ -14,11 +17,11 @@ if /i not "%confirm%"=="Y" (
 
 echo.
 echo [1/2] Stopping VM...
-gcloud compute instances stop hindsight-vm --project=hindsight-prod-9802 --zone=us-south1-a --quiet
+call %GCLOUD% compute instances stop hindsight-vm --project=hindsight-prod-9802 --zone=us-south1-a --quiet
 
 echo.
 echo [2/2] Stopping Database (Cloud SQL)...
-gcloud sql instances patch hindsight-db --project=hindsight-prod-9802 --activation-policy=NEVER --quiet
+call %GCLOUD% sql instances patch hindsight-db --project=hindsight-prod-9802 --activation-policy=NEVER --quiet
 
 echo.
 echo ============================================
