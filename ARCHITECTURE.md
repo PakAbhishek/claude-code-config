@@ -2,7 +2,7 @@
 
 ## Executive Overview
 
-The Claude Code Configuration System is an enterprise-grade deployment and configuration management solution that enables PakEnergy developers to leverage Claude AI capabilities through AWS Bedrock. The system features automated installation, cloud-based memory persistence, cross-platform compatibility, and specialized GPU optimization for high-performance computing environments.
+The Claude Code Configuration System is an enterprise-grade deployment and configuration management solution that enables PakEnergy developers to leverage Claude AI capabilities through AWS Bedrock. The system features automated installation, cloud-based memory persistence, and cross-platform compatibility.
 
 ## Table of Contents
 
@@ -25,11 +25,11 @@ The Claude Code Configuration System is an enterprise-grade deployment and confi
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         User Workstations                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
-│  │ Windows  │  │   Mac    │  │  Linux   │  │  DGX Spark   │   │
-│  │   PC     │  │  (M1/x86)│  │  Desktop │  │  (ARM/GPU)   │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘   │
-│       └─────────────┴──────────────┴───────────────┘           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
+│  │   Windows    │  │     Mac      │  │    Linux     │         │
+│  │     PC       │  │   (M1/x86)  │  │   Desktop    │         │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘         │
+│         └─────────────────┴─────────────────┘                 │
 │                            │                                     │
 └────────────────────────────┼─────────────────────────────────────┘
                              │
@@ -93,8 +93,7 @@ The Claude Code Configuration System is an enterprise-grade deployment and confi
 ```bash
 # Modular installer architecture
 install-claude-complete.sh     # Personal installer (base)
-├── install-claude-team.sh     # Team variant (no Hindsight)
-└── install-claude-dgx.sh       # DGX extension (GPU support)
+└── install-claude-team.sh     # Team variant (no Hindsight)
 
 # Component structure
 _scripts/
@@ -157,13 +156,6 @@ spec:
 - **SystemD Integration**: Service management
 - **X11/Wayland**: GUI browser launch
 - **AppArmor/SELinux**: Security profiles
-
-#### DGX Spark Components
-- **NVIDIA Driver Integration**: CUDA 12.1+
-- **Unified Memory Management**: 128GB LPDDR5x
-- **GPU Monitoring**: nvitop, gpustat
-- **Container Runtime**: Docker with GPU support
-- **Blackwell Optimizations**: FP4, Tensor Cores
 
 ---
 
@@ -428,8 +420,7 @@ sequenceDiagram
 - **Concurrent Sessions**: Unlimited (AWS quota dependent)
 
 #### Vertical Scaling
-- **DGX Spark**: 128GB unified memory for large models
-- **GPU Acceleration**: CUDA cores for parallel processing
+- **Larger VMs**: Increase CPU/RAM for heavier workloads
 - **Batch Processing**: Async job queues supported
 
 ### Optimization Strategies

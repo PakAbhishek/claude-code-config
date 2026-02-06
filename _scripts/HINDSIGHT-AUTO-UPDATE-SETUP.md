@@ -21,7 +21,7 @@ Automated system that:
 ## 📋 Prerequisites
 
 ### GCP VM Requirements
-- **VM:** hindsight-vm (n2-standard-4)
+- **VM:** hindsight-vm (e2-medium)
 - **OS:** Container-Optimized OS (COS) or Ubuntu/Debian
 - **Region:** us-south1-a
 - **IP:** 34.174.13.163 (static)
@@ -534,7 +534,6 @@ sudo ls -t hindsight-backup-*.tar.gz | tail -n +8 | xargs -r rm
 ## 👥 Support
 
 - **Author:** Abhishek Chauhan (achau)
-- **Organization:** PakEnergy
 - **GCP Project:** hindsight-prod-9802
 
 **For issues:**

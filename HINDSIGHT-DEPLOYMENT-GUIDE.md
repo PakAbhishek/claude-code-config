@@ -322,7 +322,7 @@ The pipeline is designed to be non-blocking: if any layer fails, Claude Code sti
 
 ## The Challenge
 
-Developers work across multiple machines: Windows desktop, Mac laptop, Linux servers, DGX workstations. Claude Code configuration (hooks, agents, commands, CLAUDE.md) must stay in sync.
+Developers work across multiple machines: Windows desktop, Mac laptop, and Linux servers. Claude Code configuration (hooks, agents, commands, CLAUDE.md) must stay in sync.
 
 ## Solution: OneDrive + Symlinks + Auto-Detection
 

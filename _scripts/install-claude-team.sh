@@ -364,7 +364,7 @@ if ! command -v aws &> /dev/null; then
         rm -f "$AWS_TMP_PKG"
         echo -e "${GREEN}✓ AWS CLI v2 installed${NC}"
     else
-        # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
+        # Linux installation - detect architecture for ARM support
         ARCH=$(uname -m)
         if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
             echo "Downloading AWS CLI v2 for Linux (ARM64)..."

@@ -333,7 +333,7 @@ else
             sudo installer -pkg "$AWS_TMP_PKG" -target /
             rm -f "$AWS_TMP_PKG"
         else
-            # Linux installation - detect architecture for ARM support (DGX Spark uses aarch64)
+            # Linux installation - detect architecture for ARM support
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
                 echo -e "${YELLOW}Detected ARM architecture ($ARCH) - using ARM64 AWS CLI binary${NC}"

@@ -67,7 +67,7 @@ Update-AWS-Credentials.bat :: Manual refresh (backup)
 ## GCP Resources
 
 - **Project:** hindsight-prod-9802
-- **VM:** hindsight-vm (n2-standard-4, us-south1-a)
+- **VM:** hindsight-vm (e2-medium, us-south1-a)
 - **Database:** Cloud SQL PostgreSQL 18
 
 ## Cost
