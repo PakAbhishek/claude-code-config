@@ -11,18 +11,20 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Auto-detect OneDrive path (works on both personal and work machines)
- * Checks: "OneDrive - PakEnergy" (work) first, then "OneDrive" (personal)
+ * Find the Auto-Push script across OneDrive paths.
+ * Checks PakEnergy (work) first, then personal OneDrive.
+ * Both may have the script; we use the first one found.
  */
-function getOneDrivePath() {
+function findPushScript() {
     const homeDir = process.env.USERPROFILE || process.env.HOME;
     const candidates = [
         'OneDrive - PakEnergy',  // Work machine (more specific, check first)
         'OneDrive'               // Personal machine
     ];
+    const relativePath = path.join('Claude Backup', 'claude-config', 'hindsight-setup', 'Auto-Push-AWS-Credentials.ps1');
 
     for (const candidate of candidates) {
-        const fullPath = path.join(homeDir, candidate);
+        const fullPath = path.join(homeDir, candidate, relativePath);
         if (fs.existsSync(fullPath)) {
             return fullPath;
         }
@@ -32,10 +34,7 @@ function getOneDrivePath() {
 }
 
 // Path to the PowerShell push script (in git repo, synced via OneDrive)
-const oneDrivePath = getOneDrivePath();
-const PUSH_SCRIPT = oneDrivePath
-  ? path.join(oneDrivePath, 'Claude Backup', 'claude-config', 'hindsight-setup', 'Auto-Push-AWS-Credentials.ps1')
-  : null;
+const PUSH_SCRIPT = findPushScript();
 
 function main() {
   try {

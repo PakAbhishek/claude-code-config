@@ -123,15 +123,5 @@
       }
     ]
   },
-  "provider": "bedrock",
-  "mcpServers": {
-    "hindsight": {
-      "transport": "sse",
-      "url": "http://34.174.13.163:8888/mcp/claude-code/"
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp"]
-    }
-  }
+  "provider": "bedrock"
 }

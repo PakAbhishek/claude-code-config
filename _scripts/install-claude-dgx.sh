@@ -116,10 +116,33 @@ echo "  • CLAUDE.md auto-sync"
 echo "  • Session hooks (AWS SSO check, protocol reminder)"
 echo ""
 
-# Check if OneDrive is mounted (Linux doesn't have native OneDrive)
-ONEDRIVE_PATH="$HOME/OneDrive - PakEnergy/Claude Backup/claude-config"
-if [ ! -d "$ONEDRIVE_PATH" ]; then
-    echo -e "${YELLOW}⚠ OneDrive not found at: $ONEDRIVE_PATH${NC}"
+# Auto-detect OneDrive path (works on both personal and work machines)
+echo -e "${CYAN}Auto-detecting OneDrive path...${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib/get-onedrive-path.sh" ]; then
+    source "$SCRIPT_DIR/lib/get-onedrive-path.sh"
+    ONEDRIVE_BASE=$(get_onedrive_path)
+    if [ $? -eq 0 ]; then
+        ONEDRIVE_PATH="$ONEDRIVE_BASE/Claude Backup/claude-config"
+        echo -e "${GREEN}✓ OneDrive detected: $ONEDRIVE_BASE${NC}"
+    else
+        ONEDRIVE_PATH=""
+    fi
+else
+    # Utility not available, use inline detection
+    if [ -d "$HOME/OneDrive - PakEnergy" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive - PakEnergy/Claude Backup/claude-config"
+        echo -e "${GREEN}✓ OneDrive detected: $HOME/OneDrive - PakEnergy${NC}"
+    elif [ -d "$HOME/OneDrive" ]; then
+        ONEDRIVE_PATH="$HOME/OneDrive/Claude Backup/claude-config"
+        echo -e "${GREEN}✓ OneDrive detected: $HOME/OneDrive${NC}"
+    else
+        ONEDRIVE_PATH=""
+    fi
+fi
+
+if [ -z "$ONEDRIVE_PATH" ] || [ ! -d "$ONEDRIVE_PATH" ]; then
+    echo -e "${YELLOW}⚠ OneDrive not found${NC}"
     echo ""
     echo "DGX OS (Ubuntu-based) doesn't have native OneDrive client."
     echo "Please set up OneDrive access using one of these methods:"
