@@ -18,3 +18,7 @@ Thumbs.db
 # Personal test files
 test-*.sh
 debug-*.log
+
+# PDF build outputs (generated, not source)
+diagrams/*.png
+*.pdf

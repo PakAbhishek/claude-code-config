@@ -1,0 +1,31 @@
+graph TD
+    START(["Tool Invocation"]) --> SKIP{"Skip Tool?<br/><i>Read, Glob, Grep,<br/>TaskOutput, TaskList,<br/>TaskGet</i>"}
+
+    SKIP -->|"Yes"| SKIP_OUT["SKIP<br/><i>too noisy</i>"]
+    SKIP -->|"No"| DEDUP{"Deduplicate?<br/><i>Same bash command<br/>within 5-min window?</i>"}
+
+    DEDUP -->|"Yes"| DEDUP_OUT["SKIP<br/><i>duplicate</i>"]
+    DEDUP -->|"No"| LOW{"Score < 20?"}
+
+    LOW -->|"Yes"| LOW_OUT["SKIP<br/><i>too low value</i>"]
+    LOW -->|"No"| MED{"Score 20-49?"}
+
+    MED -->|"Yes"| ASYNC["Async retain<br/><i>fire-and-forget</i><br/>Tags: expires:7d"]
+    MED -->|"No"| HIGH{"Score 50-69?"}
+
+    HIGH -->|"Yes"| STD["Standard retain<br/>Tags: expires:30d"]
+    HIGH -->|"No"| PRIO["High-priority retain<br/>Tags: permanent"]
+
+    style START fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style SKIP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style DEDUP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style LOW fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style MED fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style HIGH fill:#f8f9fa,stroke:#555,color:#1a1a1a
+
+    style SKIP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style DEDUP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style LOW_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style ASYNC fill:#fff176,stroke:#f9a825,color:#1a1a1a
+    style STD fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style PRIO fill:#4A90D9,stroke:#2c5f8a,color:#fff

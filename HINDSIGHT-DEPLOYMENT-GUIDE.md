@@ -1,27 +1,34 @@
-# Hindsight Deployment Guide: Persistent Memory for Claude Code
-
-**A Production Deployment of AI Agent Memory on Google Cloud Platform**
-
+---
+title: "Hindsight Deployment Guide"
+subtitle: "Persistent Memory for Claude Code — A Production Deployment on Google Cloud Platform"
+author: "Abhishek Chauhan"
+date: "2026-02-05"
+titlepage: true
+titlepage-color: "1a365d"
+titlepage-text-color: "ffffff"
+titlepage-rule-color: "ffffff"
+titlepage-rule-height: 2
+toc: true
+toc-own-page: true
+table-use-row-colors: true
+mainfont: "Calibri"
+sansfont: "Calibri"
+monofont: "Cascadia Mono"
+geometry: "margin=2.5cm"
+header-left: "Hindsight Deployment Guide"
+header-right: "Abhishek Chauhan"
+footer-left: "v1.0.0"
+footer-right: "Page \\thepage"
+highlight-style: "tango"
+code-block-font-size: "\\scriptsize"
+colorlinks: true
+linkcolor: "blue"
+urlcolor: "blue"
 ---
 
-## Table of Contents
+# Introduction & Motivation
 
-1. [Introduction & Motivation](#1-introduction--motivation)
-2. [Starting Point: Stock Hindsight](#2-starting-point-stock-hindsight)
-3. [GCP Deployment Architecture](#3-gcp-deployment-architecture)
-4. [Key Customizations](#4-key-customizations-what-we-changed-vs-stock)
-5. [Performance Results](#5-performance-results)
-6. [AWS Credential Pipeline](#6-aws-credential-pipeline)
-7. [Data Privacy Architecture](#7-data-privacy-architecture)
-8. [Multi-Machine Sync Architecture](#8-multi-machine-sync-architecture)
-9. [Auto-Capture Hook System](#9-auto-capture-hook-system)
-10. [Verification & Health Monitoring](#10-verification--health-monitoring)
-
----
-
-## 1. Introduction & Motivation
-
-### The Problem
+## The Problem
 
 Claude Code is a powerful CLI for software engineering, but it has no memory between sessions. Every new session starts from zero — no recall of previous decisions, no awareness of past debugging insights, no accumulated project knowledge. For teams and individuals working on long-running projects, this means:
 
@@ -30,7 +37,7 @@ Claude Code is a powerful CLI for software engineering, but it has no memory bet
 - Losing debugging insights that took hours to discover
 - No continuity across machines (laptop, desktop, remote server)
 
-### The Solution: Hindsight
+## The Solution: Hindsight
 
 [Hindsight](https://github.com/vectorize-io/hindsight) by Vectorize.io is an open-source persistent memory system that integrates with Claude Code via the Model Context Protocol (MCP). It provides three core operations:
 
@@ -38,28 +45,26 @@ Claude Code is a powerful CLI for software engineering, but it has no memory bet
 - **`recall()`** — Search stored memories using semantic similarity
 - **`reflect()`** — Synthesize insights from multiple memories using LLM reasoning
 
-### What We Built
+## What We Built
 
 Starting from stock Hindsight, we built a production-grade deployment that includes:
 
 - Cloud-hosted PostgreSQL replacing SQLite for durability
-- LiteLLM proxy routing LLM calls through AWS Bedrock (organizational compliance)
+- LiteLLM proxy routing LLM calls through AWS Bedrock
 - 6.8x faster reranking via FlashRank ONNX optimization
 - Automated AWS credential pipeline (SSO tokens to GCP)
 - Multi-machine config sync via OneDrive with auto-detection
 - Intelligent auto-capture hooks with importance scoring
 
----
+# Starting Point: Stock Hindsight
 
-## 2. Starting Point: Stock Hindsight
-
-### Source
+## Source
 
 - **GitHub**: https://github.com/vectorize-io/hindsight
 - **License**: Open-source
 - **Architecture**: Python application with MCP server interface
 
-### What Stock Hindsight Provides
+## What Stock Hindsight Provides
 
 | Component | Default Configuration |
 |-----------|----------------------|
@@ -70,51 +75,55 @@ Starting from stock Hindsight, we built a production-grade deployment that inclu
 | **MCP Tools** | retain, recall, reflect, list_banks, create_bank |
 | **Deployment** | Docker container (single) |
 
-### Stock Limitations for Our Use Case
+## Stock Limitations for Our Use Case
 
 1. **SQLite** — No concurrent access, no durability guarantees, lost if container rebuilds
 2. **Direct OpenAI** — Organization requires AWS Bedrock for compliance and audit trail
 3. **SentenceTransformers** — PyTorch-based reranker is slow on CPU (23+ seconds for 300 candidates)
 4. **Single machine** — No built-in multi-machine support
 
----
+# GCP Deployment Architecture
 
-## 3. GCP Deployment Architecture
+## Infrastructure Overview
 
-### Infrastructure Overview
+```mermaid
+graph TD
+    subgraph VM["<b>hindsight-vm</b> &nbsp;(e2-medium: 4 vCPU, 5.3 GB RAM)<br/>GCP Project: hindsight-prod-9802 &nbsp;|&nbsp; Region: us-south1-a"]
+        direction LR
+        subgraph C1["hindsight container"]
+            MCP["MCP Server<br/><i>port 8888</i>"]
+            UI["Web UI<br/><i>port 9999</i>"]
+            FR["FlashRank ONNX<br/>Reranker"]
+            EMB["Local Embeddings<br/>BAAI/bge-small-en-v1.5"]
+        end
+        subgraph C2["litellm-proxy container"]
+            LIT["LiteLLM Proxy<br/><i>port 4000</i>"]
+            BED["Routes to<br/>AWS Bedrock"]
+            MOD["Claude Opus 4.5"]
+        end
+        NET["app_hindsight-net<br/><i>Docker bridge network</i>"]
+    end
 
+    subgraph DB["Cloud SQL"]
+        PG["PostgreSQL<br/><i>34.174.59.142:5432</i>"]
+        BAK["Managed Backups"]
+        HA["High Availability"]
+    end
+
+    MCP -->|"OpenAI-format<br/>API calls"| LIT
+    MCP --> PG
+
+    style VM fill:#e3edf7,stroke:#2c5f8a,stroke-width:2px,color:#1a1a1a
+    style C1 fill:#cde0f2,stroke:#2c5f8a,stroke-width:1px,color:#1a1a1a
+    style C2 fill:#cde0f2,stroke:#2c5f8a,stroke-width:1px,color:#1a1a1a
+    style DB fill:#fef3e0,stroke:#c07d0e,stroke-width:2px,color:#1a1a1a
+    style NET fill:#f0f4f8,stroke:#999,stroke-width:1px,color:#555
+    style MCP fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style LIT fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style PG fill:#F5A623,stroke:#c07d0e,color:#fff
 ```
-GCP Project: hindsight-prod-9802
-Region: us-south1-a
 
-┌─────────────────────────────────────────────────────┐
-│  hindsight-vm (e2-medium: 4 vCPU, 5.3 GB RAM)      │
-│                                                      │
-│  ┌──────────────────┐    ┌──────────────────┐       │
-│  │   hindsight       │    │   litellm-proxy  │       │
-│  │   (port 8888)     │───▶│   (port 4000)    │       │
-│  │                   │    │                   │       │
-│  │  - MCP Server     │    │  - Routes to      │       │
-│  │  - Web UI (9999)  │    │    AWS Bedrock    │       │
-│  │  - FlashRank      │    │  - Claude Opus    │       │
-│  │  - Local Embed    │    │    4.5 model      │       │
-│  └────────┬──────────┘    └──────────────────┘       │
-│           │                                          │
-│  app_hindsight-net (Docker bridge network)           │
-└───────────┼──────────────────────────────────────────┘
-            │
-            ▼
-┌──────────────────────────────┐
-│  Cloud SQL (PostgreSQL)       │
-│  34.174.59.142:5432           │
-│                               │
-│  - Persistent storage         │
-│  - Managed backups            │
-│  - High availability          │
-└──────────────────────────────┘
-```
-
-### Component Details
+## Component Details
 
 | Component | Specification |
 |-----------|--------------|
@@ -126,13 +135,11 @@ Region: us-south1-a
 | **Firewall** | Ports 8888 (API), 9999 (Web UI), 22 (SSH) |
 | **Docker Compose** | `/home/achau/docker-compose.yml` |
 
-### Why e2-medium?
+## Why e2-medium?
 
 The FlashRank ONNX reranker and local embeddings are CPU-bound. The e2-medium provides sufficient compute for our workload (single-user, ~50 queries/day) while keeping costs minimal. The 5.3 GB RAM accommodates both containers plus the reranker model in memory.
 
----
-
-## 4. Key Customizations (What We Changed vs Stock)
+# Key Customizations (What We Changed vs Stock)
 
 | Category | Stock Hindsight | Our Configuration | Why |
 |----------|----------------|-------------------|-----|
@@ -143,19 +150,20 @@ The FlashRank ONNX reranker and local embeddings are CPU-bound. The e2-medium pr
 | **Embeddings** | Configurable | Local BAAI/bge-small-en-v1.5 | Fast, self-contained, no external API calls |
 | **Reranker Loading** | Eager (on startup) | Lazy (`LAZY_RERANKER=true`) | Faster container startup |
 
-### 4.1 Database: SQLite to Cloud SQL PostgreSQL
+## Database: SQLite to Cloud SQL PostgreSQL
 
 **Problem**: SQLite stores data in a local file inside the Docker container. Container rebuilds lose all memories. No concurrent access support.
 
 **Solution**: Cloud SQL PostgreSQL instance provides:
+
 - Automatic backups and point-in-time recovery
 - Persistent storage independent of container lifecycle
 - Support for concurrent connections
 - Managed patching and maintenance
 
-### 4.2 LLM Provider: OpenAI to AWS Bedrock via LiteLLM
+## LLM Provider: OpenAI to AWS Bedrock via LiteLLM
 
-**Problem**: Direct OpenAI API calls don't meet organizational compliance requirements. PakEnergy uses AWS with SSO authentication.
+**Problem**: Direct OpenAI API calls require routing through AWS Bedrock for centralized access control. The organization uses AWS with SSO authentication.
 
 **Solution**: A LiteLLM proxy container sits alongside Hindsight and translates OpenAI-format API calls into AWS Bedrock calls:
 
@@ -165,36 +173,37 @@ Hindsight → OpenAI-format request → LiteLLM Proxy → AWS Bedrock (Claude Op
 
 LiteLLM presents an OpenAI-compatible API to Hindsight, so no code changes are needed in Hindsight itself. The proxy reads AWS credentials from environment variables, which are pushed from client machines via the credential pipeline (Section 6).
 
-### 4.3 Reranker: SentenceTransformers to FlashRank
+## Reranker: SentenceTransformers to FlashRank
 
 **Problem**: The default SentenceTransformers reranker uses PyTorch for inference. On CPU-only VMs, reranking 300 candidates takes ~24 seconds — making `recall()` calls painfully slow.
 
 **Solution**: FlashRank uses ONNX Runtime instead of PyTorch:
+
 - ONNX Runtime is optimized for CPU inference
 - No PyTorch dependency (large library eliminated)
 - The TinyBERT-L-2 model (4 MB) loads in milliseconds
 - Reranking 300 candidates: 3.5 seconds (down from 24)
 
 **Configuration**:
+
 ```
 RERANKER_TYPE=flashrank
 FLASHRANK_MODEL=ms-marco-TinyBERT-L-2-v2
 LAZY_RERANKER=true
 ```
 
-### 4.4 Embeddings: Local BAAI/bge-small-en-v1.5
+## Embeddings: Local BAAI/bge-small-en-v1.5
 
 All embeddings are computed locally using the BAAI/bge-small-en-v1.5 model:
+
 - 384-dimensional vectors
 - Runs on CPU with no external API calls
 - Model loads once, stays in memory
 - No network latency for embedding operations
 
----
+# Performance Results
 
-## 5. Performance Results
-
-### Reranking Benchmark
+## Reranking Benchmark
 
 | Metric | Before (SentenceTransformers) | After (FlashRank) | Improvement |
 |--------|-------------------------------|-------------------|-------------|
@@ -203,7 +212,7 @@ All embeddings are computed locally using the BAAI/bge-small-en-v1.5 model:
 | `reflect()` (3 iterations) | ~78s | ~18s | **4.3x faster** |
 | Cold start (first query) | N/A | 3.5s | One-time cost |
 
-### Operational Metrics
+## Operational Metrics
 
 | Metric | Value |
 |--------|-------|
@@ -215,54 +224,62 @@ All embeddings are computed locally using the BAAI/bge-small-en-v1.5 model:
 | Container memory usage | ~1.2 GB (both containers) |
 | Uptime | 99.9%+ (GCP managed) |
 
-### Why Cold Start Matters
+## Why Cold Start Matters
 
 The first query after container restart takes ~3.5 seconds because FlashRank loads the ONNX model lazily. All subsequent queries skip this step. With `LAZY_RERANKER=true`, container startup is fast, and the one-time model load penalty is absorbed by the first real query.
 
----
+# AWS Credential Pipeline
 
-## 6. AWS Credential Pipeline
-
-### The Problem
+## The Problem
 
 Hindsight runs on GCP but needs AWS Bedrock credentials for LLM calls (via LiteLLM). AWS SSO tokens expire every 12 hours. Manual credential management is unsustainable.
 
-### The Solution: Automated Multi-Layer Pipeline
+## The Solution: Automated Multi-Layer Pipeline
 
-```
-┌─────────────────────────────────────────────────┐
-│               Client Machine (Windows)           │
-│                                                   │
-│  Layer 1: SessionStart Hook (check-aws-sso.js)   │
-│  ├─ Validates local AWS SSO session              │
-│  ├─ Auto-refreshes if expired                    │
-│  └─ Runs every time Claude Code starts           │
-│                                                   │
-│  Layer 2: SessionStart Hook (push-aws-to-gcp.js) │
-│  ├─ Reads local AWS credentials                  │
-│  ├─ Pushes to GCP VM via PowerShell script       │
-│  └─ Updates .env + recreates litellm container   │
-│                                                   │
-│  Layer 3: Windows Scheduled Task                  │
-│  ├─ Hindsight-AWS-Credential-Push                │
-│  ├─ Triggers on user login                       │
-│  └─ Pushes fresh creds even without Claude open  │
-└─────────────────────┬───────────────────────────┘
-                      │ SSH + script execution
-                      ▼
-┌─────────────────────────────────────────────────┐
-│               GCP VM (hindsight-vm)              │
-│                                                   │
-│  Auto-Push-AWS-Credentials.ps1:                  │
-│  ├─ Writes AWS_ACCESS_KEY_ID to .env             │
-│  ├─ Writes AWS_SECRET_ACCESS_KEY to .env         │
-│  ├─ Writes AWS_SESSION_TOKEN to .env             │
-│  └─ docker compose up -d --force-recreate        │
-│     litellm-proxy                                │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph CLIENT["<b>Client Machine</b> &nbsp;(Windows)"]
+        direction TB
+        L1["<b>Layer 1:</b> SessionStart Hook<br/><i>check-aws-sso.js</i>"]
+        L1A["Validates local AWS SSO session"]
+        L1B["Auto-refreshes if expired"]
+        L1C["Runs every time Claude Code starts"]
+
+        L2["<b>Layer 2:</b> SessionStart Hook<br/><i>push-aws-to-gcp.js</i>"]
+        L2A["Reads local AWS credentials"]
+        L2B["Pushes to GCP VM via PowerShell"]
+        L2C["Updates .env + recreates container"]
+
+        L3["<b>Layer 3:</b> Windows Scheduled Task<br/><i>Hindsight-AWS-Credential-Push</i>"]
+        L3A["Triggers on user login"]
+        L3B["Pushes fresh creds without Claude"]
+
+        L1 --> L1A & L1B & L1C
+        L2 --> L2A & L2B & L2C
+        L3 --> L3A & L3B
+    end
+
+    subgraph GCP["<b>GCP VM</b> &nbsp;(hindsight-vm)"]
+        direction TB
+        SCRIPT["Auto-Push-AWS-Credentials.ps1"]
+        ENV["Writes credentials to .env"]
+        DOCKER["docker compose up -d<br/>--force-recreate litellm-proxy"]
+
+        SCRIPT --> ENV --> DOCKER
+    end
+
+    CLIENT -->|"SSH + script execution"| GCP
+
+    style CLIENT fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1a1a1a
+    style GCP fill:#e3edf7,stroke:#2c5f8a,stroke-width:2px,color:#1a1a1a
+    style L1 fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style L2 fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style L3 fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style SCRIPT fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style DOCKER fill:#4A90D9,stroke:#2c5f8a,color:#fff
 ```
 
-### Pipeline Layers
+## Pipeline Layers
 
 | Layer | Trigger | Purpose | Failure Behavior |
 |-------|---------|---------|-----------------|
@@ -270,7 +287,7 @@ Hindsight runs on GCP but needs AWS Bedrock credentials for LLM calls (via LiteL
 | **SessionStart Hook 2** | Claude Code starts (after hook 1) | Push creds to GCP | Logs warning, non-blocking |
 | **Scheduled Task** | Windows login | Push creds even without Claude open | Silent retry on next login |
 
-### Why Three Layers?
+## Why Three Layers?
 
 - **Hook 1** ensures the developer always has valid local credentials
 - **Hook 2** ensures GCP gets fresh credentials every time a coding session begins
@@ -278,11 +295,9 @@ Hindsight runs on GCP but needs AWS Bedrock credentials for LLM calls (via LiteL
 
 The pipeline is designed to be non-blocking: if any layer fails, Claude Code still starts normally. The developer sees a brief status message during startup.
 
----
+# Data Privacy Architecture
 
-## 7. Data Privacy Architecture
-
-### Inference Locality
+## Inference Locality
 
 | Operation | Where It Runs | Data Leaves VM? |
 |-----------|--------------|-----------------|
@@ -291,7 +306,7 @@ The pipeline is designed to be non-blocking: if any layer fails, Claude Code sti
 | **Fact extraction** (retain) | AWS Bedrock via LiteLLM | Yes (to AWS) |
 | **Synthesis** (reflect) | AWS Bedrock via LiteLLM | Yes (to AWS) |
 
-### Key Privacy Properties
+## Key Privacy Properties
 
 1. **Embeddings are fully local**: The BAAI/bge-small-en-v1.5 model runs on the GCP VM with no network calls. Memory content is never sent to an embedding API.
 
@@ -303,35 +318,61 @@ The pipeline is designed to be non-blocking: if any layer fails, Claude Code sti
 
 5. **No telemetry**: Neither Hindsight nor our customizations send usage telemetry to external services.
 
----
+# Multi-Machine Sync Architecture
 
-## 8. Multi-Machine Sync Architecture
-
-### The Challenge
+## The Challenge
 
 Developers work across multiple machines: Windows desktop, Mac laptop, Linux servers, DGX workstations. Claude Code configuration (hooks, agents, commands, CLAUDE.md) must stay in sync.
 
-### Solution: OneDrive + Symlinks + Auto-Detection
+## Solution: OneDrive + Symlinks + Auto-Detection
 
-```
-OneDrive (Source of Truth)
-└── Claude Backup/claude-config/
-    ├── CLAUDE.md            ─── symlink ──▶ ~/.claude/CLAUDE.md
-    ├── hooks/               ─── symlink ──▶ ~/.claude/hooks
-    ├── agents/              ─── symlink ──▶ ~/.claude/agents
-    ├── commands/            ─── symlink ──▶ ~/.claude/commands
-    ├── settings.json        ─── template (copied per machine)
-    └── _scripts/
-        └── lib/
-            ├── Get-OneDrivePath.ps1    (Windows)
-            ├── get-onedrive-path.sh    (Mac/Linux)
-            └── onedrive-path.js        (Node.js hooks)
+```mermaid
+graph LR
+    subgraph OD["<b>OneDrive</b> &nbsp;(Source of Truth)<br/>Claude Backup/claude-config/"]
+        CLAUDE_SRC["CLAUDE.md"]
+        HOOKS_SRC["hooks/"]
+        AGENTS_SRC["agents/"]
+        CMDS_SRC["commands/"]
+        SETTINGS_SRC["settings.json<br/><i>template</i>"]
+        SCRIPTS["_scripts/lib/"]
+        PS1["Get-OneDrivePath.ps1"]
+        SH["get-onedrive-path.sh"]
+        JS["onedrive-path.js"]
+
+        SCRIPTS --- PS1 & SH & JS
+    end
+
+    subgraph LOCAL["<b>~/.claude/</b> &nbsp;(Local Machine)"]
+        CLAUDE_DST["CLAUDE.md"]
+        HOOKS_DST["hooks/"]
+        AGENTS_DST["agents/"]
+        CMDS_DST["commands/"]
+        SETTINGS_DST["settings.json<br/><i>per-machine copy</i>"]
+    end
+
+    CLAUDE_SRC -.->|"symlink"| CLAUDE_DST
+    HOOKS_SRC -.->|"symlink"| HOOKS_DST
+    AGENTS_SRC -.->|"symlink"| AGENTS_DST
+    CMDS_SRC -.->|"symlink"| CMDS_DST
+    SETTINGS_SRC -->|"copied at install"| SETTINGS_DST
+
+    style OD fill:#fff9e6,stroke:#f0b429,stroke-width:2px,color:#1a1a1a
+    style LOCAL fill:#f0e6ff,stroke:#7B68EE,stroke-width:2px,color:#1a1a1a
+    style CLAUDE_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style HOOKS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style AGENTS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CMDS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CLAUDE_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style HOOKS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style AGENTS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style CMDS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
 ```
 
-### OneDrive Path Auto-Detection
+## OneDrive Path Auto-Detection
 
 Different machines may have different OneDrive folder names:
-- **Work machines**: `~/OneDrive - PakEnergy`
+
+- **Work machines**: `~/OneDrive - YourOrg`
 - **Personal machines**: `~/OneDrive`
 
 The auto-detect libraries check for the work path first (more specific), then fall back to the personal path:
@@ -339,7 +380,7 @@ The auto-detect libraries check for the work path first (more specific), then fa
 ```bash
 # get-onedrive-path.sh
 get_onedrive_path() {
-    for candidate in "OneDrive - PakEnergy" "OneDrive"; do
+    for candidate in "OneDrive - YourOrg" "OneDrive"; do
         if [ -d "$HOME/$candidate" ]; then
             echo "$HOME/$candidate"
             return 0
@@ -351,7 +392,7 @@ get_onedrive_path() {
 
 This pattern is implemented in three languages (Bash, PowerShell, Node.js) for use across different contexts: installers use shell scripts, hooks use Node.js, and the Windows installer uses PowerShell.
 
-### Sync Strategy
+## Sync Strategy
 
 | Config Type | Sync Method | Update Speed |
 |-------------|-------------|-------------|
@@ -362,9 +403,10 @@ This pattern is implemented in three languages (Bash, PowerShell, Node.js) for u
 | **settings.json** | Template copy at install | Manual re-run |
 | **MCP servers** | `claude mcp add` per machine | Per-machine |
 
-### Why Not Git Alone?
+## Why Not Git Alone?
 
 Git provides version control but requires manual pull/push. OneDrive provides:
+
 - Automatic background sync
 - No manual intervention needed
 - Works even without terminal access
@@ -372,15 +414,13 @@ Git provides version control but requires manual pull/push. OneDrive provides:
 
 Git is used as a backup and for version history, not as the primary sync mechanism.
 
----
+# Auto-Capture Hook System
 
-## 9. Auto-Capture Hook System
-
-### Overview
+## Overview
 
 A PostToolUse hook (`capture.js`) runs after every Claude Code tool invocation, evaluating whether the activity is worth remembering. This creates a continuous stream of contextual memories without manual intervention.
 
-### Importance Scoring Algorithm
+## Importance Scoring Algorithm
 
 Each tool invocation is scored from 0-100 based on content and type:
 
@@ -394,44 +434,43 @@ Each tool invocation is scored from 0-100 based on content and type:
 | Task completion | 60 | +10 if subtasks |
 | Error presence | +15 | Applied on top of base |
 
-### Filtering Pipeline
+## Filtering Pipeline
 
-```
-Tool Invocation
-    │
-    ▼
-┌─ Skip Tool? ──────────────────┐
-│  Read, Glob, Grep, TaskOutput │──▶ SKIP (too noisy)
-│  TaskList, TaskGet            │
-└───────────────────────────────┘
-    │ No
-    ▼
-┌─ Deduplicate ─────────────────┐
-│  Same bash command within     │──▶ SKIP (duplicate)
-│  5-minute window?             │
-└───────────────────────────────┘
-    │ No
-    ▼
-┌─ Score < 20? ─────────────────┐──▶ SKIP (too low value)
-└───────────────────────────────┘
-    │ No
-    ▼
-┌─ Score 20-49 ─────────────────┐──▶ Async retain (fire-and-forget)
-│                               │    Tags: expires:7d
-└───────────────────────────────┘
-    │ No (score >= 50)
-    ▼
-┌─ Score 50-69 ─────────────────┐──▶ Standard retain
-│                               │    Tags: expires:30d
-└───────────────────────────────┘
-    │ No (score >= 70)
-    ▼
-┌─ Score 70+ ───────────────────┐──▶ High-priority retain
-│                               │    Tags: permanent
-└───────────────────────────────┘
+```mermaid
+graph TD
+    START(["Tool Invocation"]) --> SKIP{"Skip Tool?<br/><i>Read, Glob, Grep,<br/>TaskOutput, TaskList,<br/>TaskGet</i>"}
+
+    SKIP -->|"Yes"| SKIP_OUT["SKIP<br/><i>too noisy</i>"]
+    SKIP -->|"No"| DEDUP{"Deduplicate?<br/><i>Same bash command<br/>within 5-min window?</i>"}
+
+    DEDUP -->|"Yes"| DEDUP_OUT["SKIP<br/><i>duplicate</i>"]
+    DEDUP -->|"No"| LOW{"Score < 20?"}
+
+    LOW -->|"Yes"| LOW_OUT["SKIP<br/><i>too low value</i>"]
+    LOW -->|"No"| MED{"Score 20-49?"}
+
+    MED -->|"Yes"| ASYNC["Async retain<br/><i>fire-and-forget</i><br/>Tags: expires:7d"]
+    MED -->|"No"| HIGH{"Score 50-69?"}
+
+    HIGH -->|"Yes"| STD["Standard retain<br/>Tags: expires:30d"]
+    HIGH -->|"No"| PRIO["High-priority retain<br/>Tags: permanent"]
+
+    style START fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style SKIP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style DEDUP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style LOW fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style MED fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style HIGH fill:#f8f9fa,stroke:#555,color:#1a1a1a
+
+    style SKIP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style DEDUP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style LOW_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style ASYNC fill:#fff176,stroke:#f9a825,color:#1a1a1a
+    style STD fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style PRIO fill:#4A90D9,stroke:#2c5f8a,color:#fff
 ```
 
-### Tag System
+## Tag System
 
 **Auto-generated tags** provide structured metadata for every captured memory:
 
@@ -443,7 +482,7 @@ Tool Invocation
 | **Content** | `git`, `npm`, `debug`, `test` | Semantic categorization |
 | **Expiry** | `expires:7d`, `expires:30d`, `permanent` | Automatic cleanup |
 
-### Performance Overhead
+## Performance Overhead
 
 | Retention Type | Latency | Blocking? |
 |---------------|---------|-----------|
@@ -451,11 +490,9 @@ Tool Invocation
 | Standard (score 50+) | ~200ms | Yes (within 5s timeout) |
 | Hook timeout | 5 seconds max | Hard limit |
 
----
+# Verification & Health Monitoring
 
-## 10. Verification & Health Monitoring
-
-### Health Check Endpoints
+## Health Check Endpoints
 
 | Endpoint | Expected Response | What It Verifies |
 |----------|------------------|-----------------|
@@ -463,7 +500,7 @@ Tool Invocation
 | MCP `list_banks()` | List of memory banks | MCP protocol working |
 | MCP `recall("test")` | Search results | Full pipeline (embed + rerank + retrieve) |
 
-### Docker Container Status
+## Docker Container Status
 
 ```bash
 # SSH to VM
@@ -478,7 +515,7 @@ docker compose logs hindsight | grep "rerank"
 # Look for: "Reranked 300 candidates in 3.5s"
 ```
 
-### End-to-End Verification
+## End-to-End Verification
 
 From a Claude Code session:
 
@@ -497,7 +534,7 @@ reflect("What do I know about verification tests?")
 # Should return synthesized response (proves full LLM pipeline works)
 ```
 
-### Common Issues and Resolution
+## Common Issues and Resolution
 
 | Symptom | Likely Cause | Resolution |
 |---------|-------------|------------|
@@ -506,9 +543,7 @@ reflect("What do I know about verification tests?")
 | Slow `recall()` (>10s) | First query after restart | Normal (cold start), subsequent queries will be fast |
 | Hook capture not working | settings.json missing PostToolUse hook | Re-run installer or manually add hook config |
 
----
-
-## Appendix: File Reference
+# Appendix: File Reference
 
 | File | Purpose |
 |------|---------|
@@ -523,6 +558,4 @@ reflect("What do I know about verification tests?")
 | `_scripts/lib/Get-OneDrivePath.ps1` | OneDrive auto-detect (PowerShell) |
 | `_scripts/lib/onedrive-path.js` | OneDrive auto-detect (Node.js) |
 
----
-
-*Document Version: 1.0.0 | Created: 2026-02-05 | Author: Abhishek Chauhan (PakEnergy)*
+*Document Version: 1.0.0 | Created: 2026-02-05 | Author: Abhishek Chauhan*

@@ -1,0 +1,39 @@
+graph LR
+    subgraph OD["<b>OneDrive</b> &nbsp;(Source of Truth)<br/>Claude Backup/claude-config/"]
+        CLAUDE_SRC["CLAUDE.md"]
+        HOOKS_SRC["hooks/"]
+        AGENTS_SRC["agents/"]
+        CMDS_SRC["commands/"]
+        SETTINGS_SRC["settings.json<br/><i>template</i>"]
+        SCRIPTS["_scripts/lib/"]
+        PS1["Get-OneDrivePath.ps1"]
+        SH["get-onedrive-path.sh"]
+        JS["onedrive-path.js"]
+
+        SCRIPTS --- PS1 & SH & JS
+    end
+
+    subgraph LOCAL["<b>~/.claude/</b> &nbsp;(Local Machine)"]
+        CLAUDE_DST["CLAUDE.md"]
+        HOOKS_DST["hooks/"]
+        AGENTS_DST["agents/"]
+        CMDS_DST["commands/"]
+        SETTINGS_DST["settings.json<br/><i>per-machine copy</i>"]
+    end
+
+    CLAUDE_SRC -.->|"symlink"| CLAUDE_DST
+    HOOKS_SRC -.->|"symlink"| HOOKS_DST
+    AGENTS_SRC -.->|"symlink"| AGENTS_DST
+    CMDS_SRC -.->|"symlink"| CMDS_DST
+    SETTINGS_SRC -->|"copied at install"| SETTINGS_DST
+
+    style OD fill:#fff9e6,stroke:#f0b429,stroke-width:2px,color:#1a1a1a
+    style LOCAL fill:#f0e6ff,stroke:#7B68EE,stroke-width:2px,color:#1a1a1a
+    style CLAUDE_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style HOOKS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style AGENTS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CMDS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CLAUDE_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style HOOKS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style AGENTS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style CMDS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
