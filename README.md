@@ -1,22 +1,23 @@
 # Claude Code with Persistent Memory
 
 <div align="center">
-  <h2>🧠 Making AI Remember: Cross-Session, Cross-Machine Memory for Claude Code</h2>
+  <h3>Cross-Session, Cross-Machine Memory for Claude Code</h3>
   <p>
-    <strong>7,000+ memories • 738,000+ connections • Zero context loss • Works everywhere</strong>
+    <strong>7,000+ memories | 6.8x faster retrieval | 5 custom agents | Works everywhere</strong>
   </p>
   <p>
-    <a href="#the-problem">The Problem</a> •
-    <a href="#the-solution">The Solution</a> •
-    <a href="#key-innovations">Innovations</a> •
-    <a href="#quick-start">Quick Start</a> •
-    <a href="#architecture">Architecture</a>
+    <a href="#the-problem">Problem</a> &middot;
+    <a href="#the-solution">Solution</a> &middot;
+    <a href="#architecture">Architecture</a> &middot;
+    <a href="#performance-benchmarks">Benchmarks</a> &middot;
+    <a href="#quick-start">Quick Start</a> &middot;
+    <a href="#documentation">Docs</a>
   </p>
 </div>
 
 ---
 
-## 🎯 The Problem
+## The Problem
 
 **Claude Code forgets everything between sessions.**
 
@@ -30,114 +31,259 @@ Every time you start Claude Code, it's like meeting someone with amnesia. You ha
 
 ---
 
-## 💡 The Solution
+## The Solution
 
-This repository implements **persistent, intelligent memory** for Claude Code that:
+This repository implements **persistent, intelligent memory** for Claude Code using [Hindsight](https://github.com/vectorize-io/hindsight) by Vectorize.io, deployed as a production-grade cloud service:
 
-✅ **Remembers across sessions** - Lessons learned yesterday are available today
-✅ **Syncs across machines** - Your laptop, desktop, and server share the same memory bank
-✅ **Captures automatically** - No manual saving, just work naturally
-✅ **Filters intelligently** - Importance scoring (0-100) ensures only valuable memories persist
-✅ **Travels with you** - Custom agents, commands, and configurations follow you everywhere
-
-### Real Impact
+- **Remembers across sessions** — Lessons learned yesterday are available today
+- **Syncs across machines** — Laptop, desktop, and server share the same memory
+- **Captures automatically** — No manual saving; importance scoring filters noise
+- **Retrieves intelligently** — 6.8x faster reranking with FlashRank ONNX
+- **Travels with you** — Custom agents, commands, and configurations follow everywhere
 
 ```
 Before: "Claude, remember we're using AWS SSO for authentication"
-After:  Claude already knows - auto-captured from your last commit
-
-Before: 6 hours debugging the same AWS SSO issue twice
-After:  Claude recalls the solution from last time
-
-Before: Set up Claude Code manually on each machine
-After:  One-click install, all your customizations included
+After:  Claude already knows — auto-captured from your last session
 ```
+
+For the full deployment story, see [HINDSIGHT-DEPLOYMENT-GUIDE.pdf](HINDSIGHT-DEPLOYMENT-GUIDE.pdf).
 
 ---
 
-## 🚀 Key Innovations
+## Architecture
 
-### 1. **Hindsight: Cloud Memory Bank**
+### GCP Deployment
 
-- **7,273 memories** retained across all sessions and machines
-- **738,808 connections** linking related concepts
-- **GCP-hosted** MCP server for 24/7 availability
-- **AWS Bedrock** powered (Claude Opus 4.5) for intelligent retrieval
+Two Docker containers on a single GCP Compute Engine VM, backed by Cloud SQL PostgreSQL:
 
-**How it works:**
-```javascript
-// Every tool call is automatically evaluated
-Importance Score = f(tool, context, patterns)
+```mermaid
+graph TD
+    subgraph VM["GCP Compute Engine (e2-medium: 4 vCPU, 5.3 GB RAM)"]
+        direction LR
+        subgraph C1["hindsight container"]
+            MCP["MCP Server<br/><i>port 8888</i>"]
+            UI["Web UI<br/><i>port 9999</i>"]
+            FR["FlashRank ONNX<br/>Reranker"]
+            EMB["Local Embeddings<br/>BAAI/bge-small-en-v1.5"]
+        end
+        subgraph C2["litellm-proxy container"]
+            LIT["LiteLLM Proxy<br/><i>port 4000</i>"]
+            BED["Routes to<br/>AWS Bedrock"]
+            MOD["Claude Opus 4.5"]
+        end
+        NET["Docker bridge network"]
+    end
 
-20-49: Store for 7 days (exploratory work)
-50-69: Store for 30 days (useful work)
-70-100: Store permanently (critical work)
+    subgraph DB["Cloud SQL"]
+        PG["PostgreSQL"]
+        BAK["Managed Backups"]
+        HA["High Availability"]
+    end
 
-Examples:
-- git commit      → 90 (permanent: code changes)
-- npm install pkg → 60 (30 days: dependency changes)
-- ls, pwd, cd     → 20 (7 days: navigation)
-- Read files      → filtered out (too noisy)
+    MCP -->|"OpenAI-format<br/>API calls"| LIT
+    MCP --> PG
+
+    style VM fill:#e3edf7,stroke:#2c5f8a,stroke-width:2px,color:#1a1a1a
+    style C1 fill:#cde0f2,stroke:#2c5f8a,stroke-width:1px,color:#1a1a1a
+    style C2 fill:#cde0f2,stroke:#2c5f8a,stroke-width:1px,color:#1a1a1a
+    style DB fill:#fef3e0,stroke:#c07d0e,stroke-width:2px,color:#1a1a1a
+    style NET fill:#f0f4f8,stroke:#999,stroke-width:1px,color:#555
+    style MCP fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style LIT fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style PG fill:#F5A623,stroke:#c07d0e,color:#fff
 ```
 
-### 2. **Auto-Capture Hook**
+### Multi-Machine Sync
 
-No manual memory management - just work naturally:
+All Claude Code configuration syncs automatically via OneDrive symlinks:
 
-```javascript
-PostToolUse: Evaluates every command
-├─ Filters noise (reads, directory listings)
-├─ Scores importance (0-100)
-├─ Extracts metadata (tags, project, patterns)
-└─ Stores asynchronously (< 5ms overhead)
+```mermaid
+graph LR
+    subgraph OD["OneDrive (Source of Truth)"]
+        CLAUDE_SRC["CLAUDE.md"]
+        HOOKS_SRC["hooks/"]
+        AGENTS_SRC["agents/"]
+        CMDS_SRC["commands/"]
+        SETTINGS_SRC["settings.json<br/><i>template</i>"]
+    end
 
-High-priority (70+): Immediate storage
-Medium (50-69):     Async storage
-Low (20-49):        Background batch
+    subgraph LOCAL["~/.claude/ (Local Machine)"]
+        CLAUDE_DST["CLAUDE.md"]
+        HOOKS_DST["hooks/"]
+        AGENTS_DST["agents/"]
+        CMDS_DST["commands/"]
+        SETTINGS_DST["settings.json"]
+    end
+
+    CLAUDE_SRC -.->|"symlink"| CLAUDE_DST
+    HOOKS_SRC -.->|"symlink"| HOOKS_DST
+    AGENTS_SRC -.->|"symlink"| AGENTS_DST
+    CMDS_SRC -.->|"symlink"| CMDS_DST
+    SETTINGS_SRC -->|"copied at install"| SETTINGS_DST
+
+    style OD fill:#fff9e6,stroke:#f0b429,stroke-width:2px,color:#1a1a1a
+    style LOCAL fill:#f0e6ff,stroke:#7B68EE,stroke-width:2px,color:#1a1a1a
+    style CLAUDE_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style HOOKS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style AGENTS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CMDS_SRC fill:#ffeeb3,stroke:#f0b429,color:#1a1a1a
+    style CLAUDE_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style HOOKS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style AGENTS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
+    style CMDS_DST fill:#e0d4f5,stroke:#7B68EE,color:#1a1a1a
 ```
 
-### 3. **Universal Auto-Sync Architecture**
+OneDrive auto-detect libraries (PowerShell, Bash, Node.js) find the correct OneDrive path on both work and personal machines. Git serves as backup and version control; OneDrive handles real-time sync.
 
-Everything syncs automatically via OneDrive + Git:
+---
 
-| Component | Sync Method | Latency |
-|-----------|-------------|---------|
-| **CLAUDE.md** (config) | Symlink → OneDrive | Real-time |
-| **Custom Agents** (5 agents) | Symlink → OneDrive | Real-time |
-| **Slash Commands** (/test) | Symlink → OneDrive | Real-time |
-| **SDLC Hooks** (security, protocols) | Symlink → OneDrive | Real-time |
-| **Settings.json** | OneDrive template | On session start |
-| **Memory Bank** | Cloud MCP server | Always available |
+## Customizations vs Stock Hindsight
 
-**Work on laptop, continue on desktop - same agents, same memory, same context.**
+Starting from [stock Hindsight](https://github.com/vectorize-io/hindsight), this deployment replaces or upgrades every major component:
 
-### 4. **5 Custom Specialized Agents**
+| Category | Stock Hindsight | This Deployment | Result |
+|----------|----------------|-----------------|--------|
+| **Database** | SQLite (local file) | Cloud SQL PostgreSQL | Durable, concurrent, survives container rebuilds |
+| **LLM Provider** | Direct OpenAI | LiteLLM Proxy → AWS Bedrock | Claude Opus 4.5, SSO auth, org compliance |
+| **Reranker Engine** | SentenceTransformers (PyTorch) | FlashRank (ONNX Runtime) | **6.8x faster** on CPU, 80% less RAM |
+| **Reranker Model** | ms-marco-MiniLM-L-6-v2 (22 MB) | ms-marco-TinyBERT-L-2-v2 (4 MB) | Fastest available model |
+| **Embeddings** | Configurable | Local BAAI/bge-small-en-v1.5 | No external API calls |
+| **Reranker Loading** | Eager (on startup) | Lazy (`LAZY_RERANKER=true`) | Faster container startup |
 
-These agents travel with you across all machines:
+---
 
-| Agent | Purpose | When It Helps |
-|-------|---------|---------------|
-| **qa-test-engineer** | Comprehensive testing (unit → E2E) | After code changes, before merges |
+## Performance Benchmarks
+
+### Reranking Speed
+
+| Metric | Before (SentenceTransformers) | After (FlashRank) | Improvement |
+|--------|-------------------------------|-------------------|-------------|
+| Reranking 300 candidates | 23.9s | 3.5s | **6.8x faster** |
+| Total `recall()` latency | 24.3s | 5.7s | **4.2x faster** |
+| `reflect()` (3 iterations) | ~78s | ~18s | **4.3x faster** |
+| Cold start (first query) | N/A | 3.5s | One-time cost |
+
+### Operational Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total memories stored | 7,273+ |
+| Knowledge graph links | 738,808 |
+| Named entities tracked | 8,066 |
+| Average `recall()` (warm) | ~5.7s |
+| Average `retain()` | ~200ms |
+| Container memory usage | ~1.2 GB (both containers) |
+| Uptime | 99.9%+ (GCP managed) |
+
+---
+
+## Auto-Capture System
+
+A `PostToolUse` hook evaluates every Claude Code tool invocation and automatically stores valuable activities as memories. No manual intervention needed.
+
+### Filtering Pipeline
+
+```mermaid
+graph TD
+    START(["Tool Invocation"]) --> SKIP{"Skip Tool?<br/><i>Read, Glob, Grep,<br/>TaskOutput, TaskList,<br/>TaskGet</i>"}
+
+    SKIP -->|"Yes"| SKIP_OUT["SKIP<br/><i>too noisy</i>"]
+    SKIP -->|"No"| DEDUP{"Deduplicate?<br/><i>Same bash command<br/>within 5-min window?</i>"}
+
+    DEDUP -->|"Yes"| DEDUP_OUT["SKIP<br/><i>duplicate</i>"]
+    DEDUP -->|"No"| LOW{"Score < 20?"}
+
+    LOW -->|"Yes"| LOW_OUT["SKIP<br/><i>too low value</i>"]
+    LOW -->|"No"| MED{"Score 20-49?"}
+
+    MED -->|"Yes"| ASYNC["Async retain<br/><i>fire-and-forget</i><br/>Tags: expires:7d"]
+    MED -->|"No"| HIGH{"Score 50-69?"}
+
+    HIGH -->|"Yes"| STD["Standard retain<br/>Tags: expires:30d"]
+    HIGH -->|"No"| PRIO["High-priority retain<br/>Tags: permanent"]
+
+    style START fill:#4A90D9,stroke:#2c5f8a,color:#fff
+    style SKIP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style DEDUP fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style LOW fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style MED fill:#f8f9fa,stroke:#555,color:#1a1a1a
+    style HIGH fill:#f8f9fa,stroke:#555,color:#1a1a1a
+
+    style SKIP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style DEDUP_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style LOW_OUT fill:#ef5350,stroke:#c62828,color:#fff
+    style ASYNC fill:#fff176,stroke:#f9a825,color:#1a1a1a
+    style STD fill:#66bb6a,stroke:#2e7d32,color:#fff
+    style PRIO fill:#4A90D9,stroke:#2c5f8a,color:#fff
+```
+
+### Importance Scoring
+
+| Activity | Base Score | Modifiers |
+|----------|------------|-----------|
+| `git commit` | 90 | +15 if errors |
+| `git push` | 85 | +15 if errors |
+| File edit (.ts/.js/.py) | 65 | +10 if Write (new file) |
+| `package.json` edit | 80 | Critical file boost |
+| Command execution | 50 | -30 if trivial (ls, pwd, cd) |
+| Task completion | 60 | +10 if subtasks |
+| Error presence | +15 | Applied on top of base |
+
+Memories are tagged with auto-generated metadata (`auto-captured`, `tool:bash`, `priority:high`, etc.) and expiry tags (`expires:7d`, `expires:30d`, `permanent`) for automatic lifecycle management. See [HINDSIGHT-SETUP.md](HINDSIGHT-SETUP.md) for full configuration details.
+
+---
+
+## Data Privacy
+
+All embedding and reranking operations run locally on the GCP VM. Only LLM-dependent operations (`retain` for fact extraction and `reflect` for synthesis) send data to AWS Bedrock.
+
+| Operation | Where It Runs | Data Leaves VM? |
+|-----------|--------------|-----------------|
+| **Embedding** | Local (BAAI/bge-small-en-v1.5) | No |
+| **Reranking** | Local (FlashRank ONNX) | No |
+| **Fact extraction** (retain) | AWS Bedrock via LiteLLM | Yes (to AWS) |
+| **Synthesis** (reflect) | AWS Bedrock via LiteLLM | Yes (to AWS) |
+| **Storage** | Cloud SQL PostgreSQL (same GCP project) | No |
+
+AWS Bedrock does not use customer data for model training. No telemetry is sent to external services.
+
+---
+
+## Custom Agents and Commands
+
+### 5 Specialized Agents
+
+| Agent | Purpose | When It Activates |
+|-------|---------|-------------------|
+| **qa-test-engineer** | Comprehensive testing (unit through E2E) | After code changes, before merges |
 | **requirements-guardian** | User acceptance testing | Verify features match specs |
 | **devops-guardian** | Git operations, code review | Before commits, PRs, pushes |
 | **elite-security-auditor** | Vulnerability scanning | Security-critical code |
 | **elite-documentation-architect** | Technical writing | READMEs, APIs, architecture docs |
 
-### 5. **Smart Memory Retrieval**
+### Slash Commands
 
-Hindsight uses 7 MCP tools for intelligent memory access:
+| Command | Description |
+|---------|-------------|
+| `/test` | Run comprehensive testing across all levels |
+| `/worktree` | Manage git worktrees for parallel Claude sessions |
 
-```
-recall(query)           - Semantic search across all memories
-reflect(question)       - Introspection for patterns and learnings
-remember(content, tags) - Manual memory storage
-search_memories(...)    - Advanced filtering and search
-get_related(memory_id)  - Find connected concepts
-get_statistics()        - Memory bank health metrics
-list_tags()             - Discover memory organization
-```
+---
 
-**Example workflow:**
+## MCP Tools
+
+Hindsight exposes 5 core MCP tools to Claude Code:
+
+| Tool | Purpose |
+|------|---------|
+| `retain` | Store a fact, decision, or insight |
+| `recall` | Search stored memories using semantic similarity |
+| `reflect` | Synthesize insights from multiple memories using LLM reasoning |
+| `list_banks` | View all memory banks |
+| `create_bank` | Create isolated memory namespaces |
+
+**Example — recalling a past debugging session:**
+
 ```bash
 # You: "How did we fix the AWS SSO issue last time?"
 # Claude internally runs: reflect("AWS SSO debugging history")
@@ -146,13 +292,13 @@ list_tags()             - Discover memory organization
 
 ---
 
-## 🎬 Quick Start
+## Quick Start
 
 ### One-Click Installation
 
 **Windows:**
 ```batch
-# Double-click this file from OneDrive
+:: Double-click from your OneDrive folder:
 OneDrive\Claude Backup\claude-config\Install-Claude-Code.bat
 ```
 
@@ -163,362 +309,68 @@ cd claude-code-config/_scripts
 bash install-claude-complete.sh
 ```
 
-### What Gets Installed (20 minutes)
+### What Gets Installed
 
-✅ Claude Code CLI (latest version)
-✅ Hindsight MCP server connection
-✅ AWS Bedrock via SSO (opens browser for auth)
-✅ 5 custom agents + slash commands
-✅ Auto-capture hook (PostToolUse)
-✅ SDLC enforcement hooks (security, protocols)
-✅ Auto-sync symlinks (agents, commands, hooks)
-✅ CLAUDE.md configuration
+- Claude Code CLI (latest version)
+- Hindsight MCP server connection
+- AWS Bedrock via SSO (opens browser for auth)
+- 5 custom agents + 2 slash commands
+- Auto-capture hook (PostToolUse)
+- SDLC enforcement hooks (security, protocols)
+- Auto-sync symlinks (agents, commands, hooks, CLAUDE.md)
+- AWS credential auto-push to GCP (SessionStart hook + Scheduled Task)
 
-**That's it.** Start Claude Code and it remembers everything.
-
----
-
-## 📊 Architecture
-
-### Memory Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  You work in Claude Code                                     │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  PostToolUse Hook (capture.js)                              │
-│  ├─ Filter: Skip reads, globs, greps                        │
-│  ├─ Score:  Evaluate importance (0-100)                     │
-│  ├─ Tag:    Extract project, tool, patterns                 │
-│  └─ Store:  Send to Hindsight (async if < 70)              │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Hindsight Memory Bank (GCP VM)                             │
-│  • 34.174.13.163:8888                                       │
-│  • 7,273 memories, 738,808 links                            │
-│  • PostgreSQL + Embeddings                                   │
-│  • AWS Bedrock (Claude Opus 4.5)                            │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Available on ALL machines via MCP                          │
-│  recall() • reflect() • remember() • search_memories()       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Multi-Machine Sync
-
-```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   Laptop     │      │   Desktop    │      │   Server     │
-│              │      │              │      │              │
-│  ~/.claude/  │      │  ~/.claude/  │      │  ~/.claude/  │
-│  ├─ agents/  │◄────►│  ├─ agents/  │◄────►│  ├─ agents/  │
-│  ├─ commands/│      │  ├─ commands/│      │  ├─ commands/│
-│  ├─ hooks/   │      │  ├─ hooks/   │      │  ├─ hooks/   │
-│  └─ CLAUDE.md│      │  └─ CLAUDE.md│      │  └─ CLAUDE.md│
-└──────┬───────┘      └──────┬───────┘      └──────┬───────┘
-       │                     │                     │
-       └─────────────────────┼─────────────────────┘
-                             │
-                    ┌────────▼────────┐
-                    │  OneDrive Sync  │
-                    │  (Real-time)    │
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐
-                    │  GitHub Backup  │
-                    │  (Version Ctrl) │
-                    └─────────────────┘
-
-All three machines share:
-✅ Same memory bank (Hindsight)
-✅ Same agents (5 specialists)
-✅ Same commands (/test)
-✅ Same hooks (auto-capture)
-✅ Same configuration (CLAUDE.md)
-```
-
----
-
-## 🎯 Use Cases
-
-### 1. **Learn Once, Apply Everywhere**
+### Verify
 
 ```bash
-# Monday on laptop: Debug AWS SSO issue
-git commit -m "Fix AWS profile detection in hook"
-# → Auto-captured with importance: 90
-
-# Friday on desktop: Similar issue appears
-# Claude: reflect("AWS profile issues")
-# → Recalls Monday's fix, applies immediately
+claude --version                    # CLI installed
+recall("test connection")           # Memory bank connected
+ls ~/.claude/agents/                # 5 agent .md files
 ```
 
-### 2. **Team Knowledge Sharing**
-
-```bash
-# Senior dev configures optimal testing strategy
-# → Captured in Hindsight
-
-# Junior dev asks: "How should I test this?"
-# Claude: reflect("testing best practices")
-# → Returns senior dev's tested patterns
-```
-
-### 3. **Cross-Project Patterns**
-
-```bash
-# Project A: Discovers Python packaging issue
-# → Stored with tags: python, pip, dependencies
-
-# Project B: Similar Python project
-# Claude: recall("Python dependency management")
-# → Proactively suggests solution from Project A
-```
-
-### 4. **No Setup on New Machines**
-
-```bash
-# New machine:
-git clone <repo> && ./install.sh
-
-# 20 minutes later:
-✅ All agents available
-✅ All memory accessible
-✅ All commands working
-✅ All patterns learned
-# Ready to work
-```
+See [INSTALLER-README.md](INSTALLER-README.md) for detailed installation guide.
 
 ---
 
-## 🔬 Technical Deep Dive
-
-### Hindsight MCP Server
-
-**Infrastructure:**
-- **Platform:** GCP Compute Engine (n2-standard-4)
-- **CPU:** 4 vCPUs, 16GB RAM
-- **Storage:** PostgreSQL with vector embeddings
-- **LLM:** AWS Bedrock (Claude Opus 4.5) via SSO
-- **API:** MCP over SSE (Server-Sent Events)
-
-**Endpoints:**
-- Control Plane: `http://34.174.13.163:9999` (health, stats)
-- MCP API: `http://34.174.13.163:8888/mcp/claude-code/`
-
-**Statistics (as of 2026-01-25):**
-```json
-{
-  "total_nodes": 7273,
-  "total_links": 738808,
-  "total_documents": 2672,
-  "pending_operations": 0,
-  "failed_operations": 36
-}
-```
-
-### Auto-Capture Hook Logic
-
-**File:** `~/.claude/hooks/hindsight/capture.js`
-
-```javascript
-// Filtering Rules
-SKIP_TOOLS = ['Read', 'Glob', 'Grep']  // Too noisy
-
-// Importance Scoring
-SCORES = {
-  'git commit': 90,      // Code changes (permanent)
-  'git push': 85,        // Deployment (permanent)
-  'Edit': 65,            // File modifications (30 days)
-  'Write': 70,           // New files (30 days)
-  'Bash(npm install)': 60  // Dependencies (30 days)
-}
-
-// Storage Strategy
-if (score >= 70) immediate_store()   // Critical
-else if (score >= 50) async_store()  // Important
-else if (score >= 20) batch_store()  // Useful
-else filter_out()                     // Noise
-```
-
-### Custom Agent Definitions
-
-Agents are Markdown files that extend Claude Code's capabilities:
-
-```markdown
-# agents/qa-test-engineer.md
-- Triggers: After code changes, before commits
-- Capabilities: Unit tests, integration tests, E2E tests
-- Integration: Uses /test command, devops-guardian
-
-# agents/requirements-guardian.md
-- Triggers: Before marking tasks complete
-- Capabilities: User acceptance testing, requirement validation
-- Integration: Works with qa-test-engineer
-
-# agents/devops-guardian.md
-- Triggers: Before git operations (commit, push, PR)
-- Capabilities: Code review, security checks, branch validation
-- Integration: Pre-commit hooks, GitHub integration
-
-# agents/elite-security-auditor.md
-- Triggers: Security-critical code, authentication, payments
-- Capabilities: Vulnerability scanning, penetration testing
-- Integration: OWASP Top 10, CVE database
-
-# agents/elite-documentation-architect.md
-- Triggers: Documentation tasks (README, API docs, ADRs)
-- Capabilities: Technical writing, architecture documentation
-- Integration: Markdown, API specs, diagrams
-```
-
----
-
-## 🛡️ Security & Compliance
-
-### SOC 2 Compliant
-
-✅ **No hardcoded secrets** - All credentials from environment
-✅ **Pre-write security scan** - Checks for secrets before file writes
-✅ **AWS SSO only** - Temporary credentials, auto-refresh
-✅ **Encrypted transport** - HTTPS/TLS for all MCP communication
-✅ **Audit logging** - All memory operations logged
-
-### Security Hooks
-
-**PreToolUse hooks:**
-- `soc2-security-scan.js` - Scans content before writing files
-- `protocol-reminder.js` - Enforces SDLC protocols
-
-**Patterns detected:**
-- API keys, tokens, passwords
-- AWS credentials (AKIA*, ASIA*)
-- Private IPs (10.x.x.x, 192.168.x.x)
-- Connection strings with embedded credentials
-- PII (SSN, credit cards, emails)
-
----
-
-## 📈 Benefits
-
-### For Individual Developers
-
-- **50% faster debugging** - Recall solutions from previous sessions
-- **No context rebuilding** - AI remembers your project patterns
-- **Consistent across machines** - Same experience laptop → desktop → server
-- **Compound learning** - Knowledge accumulates over time
-
-### For Teams
-
-- **Knowledge sharing** - Team memories accessible to all
-- **Onboarding acceleration** - New devs inherit team knowledge
-- **Pattern reuse** - Successful solutions replicated automatically
-- **Reduced tribal knowledge** - Organizational memory in code
-
-### For Organizations
-
-- **Persistent expertise** - Knowledge survives employee transitions
-- **Compliance tracking** - All AI interactions logged and auditable
-- **Standardization** - Consistent agent behavior across projects
-- **ROI measurement** - Memory statistics track value created
-
----
-
-## 🚦 Quick Verification
-
-After installation, verify everything works:
-
-```bash
-# 1. Check Claude Code
-claude --version
-
-# 2. Test memory connection
-# In Claude Code:
-recall("test connection")
-# Should return: Connected to Hindsight
-
-# 3. Check agents
-ls ~/.claude/agents/
-# Should show: 5 .md files
-
-# 4. Test auto-capture
-git commit -m "Test commit"
-# Check Hindsight captured it:
-recall("Test commit", tags=["auto-captured"])
-
-# 5. View statistics
-# In Claude Code:
-get_statistics()
-# Shows memory bank stats
-```
-
----
-
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| **[HINDSIGHT-SETUP.md](HINDSIGHT-SETUP.md)** | Detailed Hindsight integration guide |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | System design and technical architecture |
-| **[SECURITY.md](SECURITY.md)** | Security model and compliance |
-| **[INSTALLER-README.md](INSTALLER-README.md)** | Installer technical documentation |
-| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Common issues and solutions |
-| **[CHANGELOG.md](CHANGELOG.md)** | Version history |
+| [HINDSIGHT-DEPLOYMENT-GUIDE.pdf](HINDSIGHT-DEPLOYMENT-GUIDE.pdf) | Full deployment architecture, benchmarks, and optimization details |
+| [HINDSIGHT-SETUP.md](HINDSIGHT-SETUP.md) | Hindsight integration guide (hooks, scoring, usage examples) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and technical architecture |
+| [SECURITY.md](SECURITY.md) | Security model and compliance |
+| [INSTALLER-README.md](INSTALLER-README.md) | Installer technical documentation |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ---
 
-## 🔄 Updating
+## Repository Structure
 
-The system auto-updates configuration via OneDrive sync. For code updates:
-
-```bash
-cd ~/claude-code-config  # or OneDrive location
-git pull
-./Install-Claude-Code.bat  # or install-claude-complete.sh
+```
+claude-code-config/
+  agents/                  # 5 custom agent definitions (.md)
+  commands/                # Slash commands (/test, /worktree)
+  hooks/                   # Auto-capture + SDLC enforcement hooks
+  hindsight-setup/         # AWS credential pipeline scripts
+  hindsight-mcp-server/    # Custom stdio MCP server (alternative)
+  diagrams/                # Mermaid source files
+  _scripts/                # Installers + cross-platform utilities
+  HINDSIGHT-DEPLOYMENT-GUIDE.pdf
+  README.md
 ```
 
 ---
 
-## 🎓 Presentations
+## Author
 
-**Austin Claude Code Meetup (2026-01-25)**
-- Topic: Making AI Remember - Persistent Memory Implementation
-- Demo: Cross-machine memory, auto-capture, custom agents
-- GitHub: https://github.com/PakAbhishek/claude-code-config
+**Abhishek Chauhan** &middot; [GitHub](https://github.com/PakAbhishek)
 
----
-
-## 🔗 Resources
-
-- **Hindsight Project:** Internal (PakEnergy)
-- **MCP Specification:** https://spec.modelcontextprotocol.io
-- **Claude Code CLI:** https://claude.ai/claude-code
-- **This Repository:** https://github.com/PakAbhishek/claude-code-config
-
----
-
-## 👥 Author
-
-**Abhishek Chauhan** (achau)
-**Organization:** PakEnergy
-**Version:** 3.1.0 (Hindsight Integration)
-**Last Updated:** 2026-01-25
+**Resources:** [Hindsight](https://github.com/vectorize-io/hindsight) &middot; [MCP Specification](https://spec.modelcontextprotocol.io) &middot; [Claude Code](https://claude.ai/claude-code)
 
 ---
 
 <div align="center">
-  <p>
-    <strong>🧠 Give your AI a memory. Make it truly intelligent.</strong>
-  </p>
-  <p>
-    <sub>7,273 memories • 738,808 connections • Growing every day</sub>
-  </p>
+  <sub>7,273 memories &middot; 738,808 connections &middot; Growing every session</sub>
 </div>
